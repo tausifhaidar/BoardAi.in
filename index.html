@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+‎<html lang="hi">
+‎<head>
+‎<meta charset="UTF-8">
+‎<meta name="viewport" content="width=device-width, initial-scale=1.0">
+‎<title>PadhAI - Bihar Board AI Tutor</title>
+‎<style>
+‎*{margin:0;padding:0;box-sizing:border-box}
+‎body{font-family:'Segoe UI',sans-serif;background:#fff8f0;min-height:100vh}
+‎.header{background:linear-gradient(135deg,#e65c00,#f9a825);padding:16px;display:flex;justify-content:space-between;align-items:center}
+‎.logo{color:white;font-size:22px;font-weight:800}
+‎.logo span{font-size:12px;display:block;opacity:0.85}
+‎.counter{background:rgba(255,255,255,0.2);border-radius:10px;padding:8px 14px;text-align:center;color:white}
+‎.counter b{font-size:20px;display:block}
+‎.counter small{font-size:10px}
+‎.progress{height:5px;background:#ffe0c0}
+‎.progress-bar{height:100%;background:linear-gradient(90deg,#e65c00,#f9a825);transition:width 0.5s}
+‎.chat{padding:16px;display:flex;flex-direction:column;gap:12px;min-height:60vh;max-height:65vh;overflow-y:auto}
+‎.welcome{text-align:center;padding:20px 0}
+‎.welcome h2{color:#e65c00;font-size:18px}
+‎.welcome p{color:#999;font-size:13px;margin-top:4px}
+‎.samples{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+‎.sample-btn{background:white;border:1.5px solid #f0c080;border-radius:10px;padding:10px 16px;color:#e65c00;font-size:13px;font-weight:600;text-align:left;cursor:pointer}
+‎.msg{display:flex;flex-direction:column;max-width:85%}
+‎.msg.user{align-self:flex-end}
+‎.msg.ai{align-self:flex-start}
+‎.bubble{padding:12px 16px;border-radius:18px;font-size:14px;line-height:1.7;white-space:pre-wrap}
+‎.msg.user .bubble{background:linear-gradient(135deg,#e65c00,#f9a825);color:white;border-radius:18px 18px 4px 18px}
+‎.msg.ai .bubble{background:white;color:#333;border:1px solid #ffe0c0;border-radius:18px 18px 18px 4px}
+‎.ai-label{color:#e65c00;font-size:11px;font-weight:700;margin-bottom:4px}
+‎.typing{display:flex;gap:5px;padding:12px 16px;background:white;border:1px solid #ffe0c0;border-radius:18px 18px 18px 4px;width:fit-content}
+‎.dot{width:8px;height:8px;border-radius:50%;background:#e65c00;animation:bounce 1.2s infinite}
+‎.dot:nth-child(2){animation-delay:0.2s}
+‎.dot:nth-child(3){animation-delay:0.4s}
+‎@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-8px)}}
+‎.blocked{margin:0 16px 8px;background:#fff3e0;border:2px solid #f9a825;border-radius:16px;padding:16px;text-align:center}
+‎.blocked h3{color:#e65c00;margin-bottom:8px}
+‎.blocked p{color:#666;font-size:12px;margin-bottom:12px}
+‎.btn-row{display:flex;gap:8px}
+‎.btn-ad{flex:1;background:white;border:2px solid #f9a825;border-radius:10px;padding:10px;color:#e65c00;font-weight:700;font-size:13px;cursor:pointer}
+‎.btn-pay{flex:1;background:linear-gradient(135deg,#e65c00,#f9a825);border:none;border-radius:10px;padding:10px;color:white;font-weight:700;font-size:13px;cursor:pointer}
+‎.ad-box{margin:0 16px 8px;background:#1a1a2e;border:2px solid #f9a825;border-radius:16px;padding:20px;text-align:center;color:white}
+‎.ad-inner{background:#16213e;border-radius:12px;padding:20px;margin:10px 0}
+‎.ad-timer{background:rgba(249,168,37,0.2);border-radius:8px;padding:8px;color:#f9a825;font-weight:700}
+‎.claim-btn{width:100%;background:linear-gradient(135deg,#e65c00,#f9a825);border:none;border-radius:10px;padding:12px;color:white;font-weight:800;font-size:15px;cursor:pointer;margin-top:8px}
+‎.input-area{padding:12px 16px;background:white;border-top:1px solid #ffe0c0;display:flex;gap:10px;align-items:flex-end;position:sticky;bottom:0}
+‎textarea{flex:1;border:1.5px solid #f0c080;border-radius:14px;padding:10px 14px;font-size:14px;resize:none;outline:none;font-family:inherit;background:#fffbf7}
+‎.send-btn{background:linear-gradient(135deg,#e65c00,#f9a825);border:none;border-radius:14px;width:48px;height:48px;color:white;font-size:20px;cursor:pointer;flex-shrink:0}
+‎.send-btn:disabled{background:#ccc;cursor:not-allowed}
+‎</style>
+‎</head>
+‎<body>
+‎<div class="header">
+‎  <div class="logo">📚 PadhAI <span>Bihar Board Class 10 AI Tutor</span></div>
+‎  <div class="counter"><b id="cnt">15</b><small>sawaal bache</small></div>
+‎</div>
+‎<div class="progress"><div class="progress-bar" id="prog" style="width:0%"></div></div>
+‎<div class="chat" id="chat">
+‎  <div class="welcome">
+‎    <div style="font-size:48px">🧪</div>
+‎    <h2>Namaste! Koi bhi science sawaal poochho</h2>
+‎    <p>Physics · Chemistry · Biology — Bihar Board syllabus</p>
+‎    <div class="samples">
+‎      <button class="sample-btn" onclick="setQ('Photosynthesis kya hai?')">💬 Photosynthesis kya hai?</button>
+‎      <button class="sample-btn" onclick="setQ('Newton ke teen niyam batao')">💬 Newton ke teen niyam batao</button>
+‎      <button class="sample-btn" onclick="setQ('Acid aur base mein kya fark hai?')">💬 Acid aur base mein kya fark hai?</button>
+‎      <button class="sample-btn" onclick="setQ('DNA kya hota hai?')">💬 DNA kya hota hai?</button>
+‎    </div>
+‎  </div>
+‎</div>
+‎<div id="blocked-box" class="blocked" style="display:none">
+‎  <h3>🔒 Free limit khatam!</h3>
+‎  <p>15 free sawaal complete. Aage padhne ke liye:</p>
+‎  <div class="btn-row">
+‎    <button class="btn-ad" onclick="startAd()">📺 Ad dekho<br><small>+3 sawaal free</small></button>
+‎    <button class="btn-pay">⭐ Subscribe<br><small>₹49/month</small></button>
+‎  </div>
+‎</div>
+‎<div id="ad-box" class="ad-box" style="display:none">
+‎  <div style="color:#f9a825;font-size:11px;font-weight:700">📺 ADVERTISEMENT</div>
+‎  <div class="ad-inner">
+‎    <div style="font-size:32px">🏫</div>
+‎    <div style="font-weight:700;font-size:16px">Rajesh Coaching Classes</div>
+‎    <div style="color:#aaa;font-size:12px">Patna ka sabse bharosemand coaching</div>
+‎  </div>
+‎  <div class="ad-timer" id="ad-timer">⏱ 5 second mein skip...</div>
+‎  <button class="claim-btn" id="claim-btn" style="display:none" onclick="claimBonus()">🎉 +3 Sawaal Claim Karo!</button>
+‎</div>
+‎<div class="input-area" id="input-area">
+‎  <textarea id="q" rows="2" placeholder="Science ka koi bhi sawaal poochho..." onkeydown="handleKey(event)"></textarea>
+‎  <button class="send-btn" id="send" onclick="ask()">🚀</button>
+‎</div>
+‎<script>
+‎const LIMIT=15;
+‎let used=0,bonus=0,adTimer=null;
+‎const chat=document.getElementById('chat');
+‎const ANTHROPIC_KEY='';
+‎
+‎function remaining(){return Math.max(0,LIMIT+bonus-used)}
+‎function updateUI(){
+‎  document.getElementById('cnt').textContent=remaining();
+‎  document.getElementById('prog').style.width=(used/(LIMIT+bonus)*100)+'%';
+‎  if(remaining()<=0){
+‎    document.getElementById('blocked-box').style.display='block';
+‎    document.getElementById('input-area').style.display='none';
+‎  }
+‎}
+‎function setQ(t){document.getElementById('q').value=t}
+‎function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();ask()}}
+‎function addMsg(role,text){
+‎  const w=document.getElementById('welcome');
+‎  if(w)w.remove();
+‎  const d=document.createElement('div');
+‎  d.className='msg '+role;
+‎  if(role==='ai')d.innerHTML='<div class="ai-label">🤖 PadhAI</div><div class="bubble">'+text+'</div>';
+‎  else d.innerHTML='<div class="bubble">'+text+'</div>';
+‎  chat.appendChild(d);
+‎  chat.scrollTop=chat.scrollHeight;
+‎}
+‎function showTyping(){
+‎  const d=document.createElement('div');
+‎  d.id='typing';d.className='msg ai';
+‎  d.innerHTML='<div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+‎  chat.appendChild(d);chat.scrollTop=chat.scrollHeight;
+‎}
+‎function removeTyping(){const t=document.getElementById('typing');if(t)t.remove()}
+‎async function ask(){
+‎  const q=document.getElementById('q').value.trim();
+‎  if(!q||remaining()<=0)return;
+‎  addMsg('user',q);
+‎  document.getElementById('q').value='';
+‎  used++;updateUI();
+‎  showTyping();
+‎  document.getElementById('send').disabled=true;
+‎  try{
+‎    const r=await fetch('https://api.anthropic.com/v1/messages',{
+‎      method:'POST',
+‎      headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_KEY,'anthropic-version':'2023-06-01'},
+‎      body:JSON.stringify({
+‎        model:'claude-haiku-4-5-20251001',
+‎        max_tokens:500,
+‎        system:'Tum Bihar Board Class 10 Science ke expert teacher ho. Sirf Hindi mein answer do. Short aur simple bhasha mein samjhao. Sirf Science ke sawaalon ka jawab do. End mein likho: 💡 Yaad rakho: [key point]',
+‎        messages:[{role:'user',content:q}]
+‎      })
+‎    });
+‎    const data=await r.json();
+‎    removeTyping();
+‎    addMsg('ai',data.content[0].text);
+‎  }catch(e){
+‎    removeTyping();
+‎    addMsg('ai','Abhi server se connect nahi ho pa raha. Thodi der baad try karo.');
+‎  }
+‎  document.getElementById('send').disabled=false;
+‎}
+‎function startAd(){
+‎  document.getElementById('blocked-box').style.display='none';
+‎  document.getElementById('ad-box').style.display='block';
+‎  let t=5;
+‎  document.getElementById('ad-timer').textContent='⏱ '+t+' second mein skip...';
+‎  adTimer=setInterval(()=>{
+‎    t--;
+‎    if(t<=0){clearInterval(adTimer);document.getElementById('ad-timer').style.display='none';document.getElementById('claim-btn').style.display='block';}
+‎    else document.getElementById('ad-timer').textContent='⏱ '+t+' second mein skip...';
+‎  },1000);
+‎}
+‎function claimBonus(){
+‎  bonus+=3;
+‎  document.getElementById('ad-box').style.display='none';
+‎  document.getElementById('input-area').style.display='flex';
+‎  document.getElementById('claim-btn').style.display='none';
+‎  document.getElementById('ad-timer').style.display='block';
+‎  updateUI();
+‎}
+‎</script>
+‎</body>
+‎</html>
