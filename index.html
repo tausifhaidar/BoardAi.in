@@ -1,176 +1,342 @@
 <!DOCTYPE html>
-‎<html lang="hi">
-‎<head>
-‎<meta charset="UTF-8">
-‎<meta name="viewport" content="width=device-width, initial-scale=1.0">
-‎<title>PadhAI - Bihar Board AI Tutor</title>
-‎<style>
-‎*{margin:0;padding:0;box-sizing:border-box}
-‎body{font-family:'Segoe UI',sans-serif;background:#fff8f0;min-height:100vh}
-‎.header{background:linear-gradient(135deg,#e65c00,#f9a825);padding:16px;display:flex;justify-content:space-between;align-items:center}
-‎.logo{color:white;font-size:22px;font-weight:800}
-‎.logo span{font-size:12px;display:block;opacity:0.85}
-‎.counter{background:rgba(255,255,255,0.2);border-radius:10px;padding:8px 14px;text-align:center;color:white}
-‎.counter b{font-size:20px;display:block}
-‎.counter small{font-size:10px}
-‎.progress{height:5px;background:#ffe0c0}
-‎.progress-bar{height:100%;background:linear-gradient(90deg,#e65c00,#f9a825);transition:width 0.5s}
-‎.chat{padding:16px;display:flex;flex-direction:column;gap:12px;min-height:60vh;max-height:65vh;overflow-y:auto}
-‎.welcome{text-align:center;padding:20px 0}
-‎.welcome h2{color:#e65c00;font-size:18px}
-‎.welcome p{color:#999;font-size:13px;margin-top:4px}
-‎.samples{display:flex;flex-direction:column;gap:8px;margin-top:16px}
-‎.sample-btn{background:white;border:1.5px solid #f0c080;border-radius:10px;padding:10px 16px;color:#e65c00;font-size:13px;font-weight:600;text-align:left;cursor:pointer}
-‎.msg{display:flex;flex-direction:column;max-width:85%}
-‎.msg.user{align-self:flex-end}
-‎.msg.ai{align-self:flex-start}
-‎.bubble{padding:12px 16px;border-radius:18px;font-size:14px;line-height:1.7;white-space:pre-wrap}
-‎.msg.user .bubble{background:linear-gradient(135deg,#e65c00,#f9a825);color:white;border-radius:18px 18px 4px 18px}
-‎.msg.ai .bubble{background:white;color:#333;border:1px solid #ffe0c0;border-radius:18px 18px 18px 4px}
-‎.ai-label{color:#e65c00;font-size:11px;font-weight:700;margin-bottom:4px}
-‎.typing{display:flex;gap:5px;padding:12px 16px;background:white;border:1px solid #ffe0c0;border-radius:18px 18px 18px 4px;width:fit-content}
-‎.dot{width:8px;height:8px;border-radius:50%;background:#e65c00;animation:bounce 1.2s infinite}
-‎.dot:nth-child(2){animation-delay:0.2s}
-‎.dot:nth-child(3){animation-delay:0.4s}
-‎@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-8px)}}
-‎.blocked{margin:0 16px 8px;background:#fff3e0;border:2px solid #f9a825;border-radius:16px;padding:16px;text-align:center}
-‎.blocked h3{color:#e65c00;margin-bottom:8px}
-‎.blocked p{color:#666;font-size:12px;margin-bottom:12px}
-‎.btn-row{display:flex;gap:8px}
-‎.btn-ad{flex:1;background:white;border:2px solid #f9a825;border-radius:10px;padding:10px;color:#e65c00;font-weight:700;font-size:13px;cursor:pointer}
-‎.btn-pay{flex:1;background:linear-gradient(135deg,#e65c00,#f9a825);border:none;border-radius:10px;padding:10px;color:white;font-weight:700;font-size:13px;cursor:pointer}
-‎.ad-box{margin:0 16px 8px;background:#1a1a2e;border:2px solid #f9a825;border-radius:16px;padding:20px;text-align:center;color:white}
-‎.ad-inner{background:#16213e;border-radius:12px;padding:20px;margin:10px 0}
-‎.ad-timer{background:rgba(249,168,37,0.2);border-radius:8px;padding:8px;color:#f9a825;font-weight:700}
-‎.claim-btn{width:100%;background:linear-gradient(135deg,#e65c00,#f9a825);border:none;border-radius:10px;padding:12px;color:white;font-weight:800;font-size:15px;cursor:pointer;margin-top:8px}
-‎.input-area{padding:12px 16px;background:white;border-top:1px solid #ffe0c0;display:flex;gap:10px;align-items:flex-end;position:sticky;bottom:0}
-‎textarea{flex:1;border:1.5px solid #f0c080;border-radius:14px;padding:10px 14px;font-size:14px;resize:none;outline:none;font-family:inherit;background:#fffbf7}
-‎.send-btn{background:linear-gradient(135deg,#e65c00,#f9a825);border:none;border-radius:14px;width:48px;height:48px;color:white;font-size:20px;cursor:pointer;flex-shrink:0}
-‎.send-btn:disabled{background:#ccc;cursor:not-allowed}
-‎</style>
-‎</head>
-‎<body>
-‎<div class="header">
-‎  <div class="logo">📚 PadhAI <span>Bihar Board Class 10 AI Tutor</span></div>
-‎  <div class="counter"><b id="cnt">15</b><small>sawaal bache</small></div>
-‎</div>
-‎<div class="progress"><div class="progress-bar" id="prog" style="width:0%"></div></div>
-‎<div class="chat" id="chat">
-‎  <div class="welcome">
-‎    <div style="font-size:48px">🧪</div>
-‎    <h2>Namaste! Koi bhi science sawaal poochho</h2>
-‎    <p>Physics · Chemistry · Biology — Bihar Board syllabus</p>
-‎    <div class="samples">
-‎      <button class="sample-btn" onclick="setQ('Photosynthesis kya hai?')">💬 Photosynthesis kya hai?</button>
-‎      <button class="sample-btn" onclick="setQ('Newton ke teen niyam batao')">💬 Newton ke teen niyam batao</button>
-‎      <button class="sample-btn" onclick="setQ('Acid aur base mein kya fark hai?')">💬 Acid aur base mein kya fark hai?</button>
-‎      <button class="sample-btn" onclick="setQ('DNA kya hota hai?')">💬 DNA kya hota hai?</button>
-‎    </div>
-‎  </div>
-‎</div>
-‎<div id="blocked-box" class="blocked" style="display:none">
-‎  <h3>🔒 Free limit khatam!</h3>
-‎  <p>15 free sawaal complete. Aage padhne ke liye:</p>
-‎  <div class="btn-row">
-‎    <button class="btn-ad" onclick="startAd()">📺 Ad dekho<br><small>+3 sawaal free</small></button>
-‎    <button class="btn-pay">⭐ Subscribe<br><small>₹49/month</small></button>
-‎  </div>
-‎</div>
-‎<div id="ad-box" class="ad-box" style="display:none">
-‎  <div style="color:#f9a825;font-size:11px;font-weight:700">📺 ADVERTISEMENT</div>
-‎  <div class="ad-inner">
-‎    <div style="font-size:32px">🏫</div>
-‎    <div style="font-weight:700;font-size:16px">Rajesh Coaching Classes</div>
-‎    <div style="color:#aaa;font-size:12px">Patna ka sabse bharosemand coaching</div>
-‎  </div>
-‎  <div class="ad-timer" id="ad-timer">⏱ 5 second mein skip...</div>
-‎  <button class="claim-btn" id="claim-btn" style="display:none" onclick="claimBonus()">🎉 +3 Sawaal Claim Karo!</button>
-‎</div>
-‎<div class="input-area" id="input-area">
-‎  <textarea id="q" rows="2" placeholder="Science ka koi bhi sawaal poochho..." onkeydown="handleKey(event)"></textarea>
-‎  <button class="send-btn" id="send" onclick="ask()">🚀</button>
-‎</div>
-‎<script>
-‎const LIMIT=15;
-‎let used=0,bonus=0,adTimer=null;
-‎const chat=document.getElementById('chat');
-‎const ANTHROPIC_KEY='';
-‎
-‎function remaining(){return Math.max(0,LIMIT+bonus-used)}
-‎function updateUI(){
-‎  document.getElementById('cnt').textContent=remaining();
-‎  document.getElementById('prog').style.width=(used/(LIMIT+bonus)*100)+'%';
-‎  if(remaining()<=0){
-‎    document.getElementById('blocked-box').style.display='block';
-‎    document.getElementById('input-area').style.display='none';
-‎  }
-‎}
-‎function setQ(t){document.getElementById('q').value=t}
-‎function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();ask()}}
-‎function addMsg(role,text){
-‎  const w=document.getElementById('welcome');
-‎  if(w)w.remove();
-‎  const d=document.createElement('div');
-‎  d.className='msg '+role;
-‎  if(role==='ai')d.innerHTML='<div class="ai-label">🤖 PadhAI</div><div class="bubble">'+text+'</div>';
-‎  else d.innerHTML='<div class="bubble">'+text+'</div>';
-‎  chat.appendChild(d);
-‎  chat.scrollTop=chat.scrollHeight;
-‎}
-‎function showTyping(){
-‎  const d=document.createElement('div');
-‎  d.id='typing';d.className='msg ai';
-‎  d.innerHTML='<div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
-‎  chat.appendChild(d);chat.scrollTop=chat.scrollHeight;
-‎}
-‎function removeTyping(){const t=document.getElementById('typing');if(t)t.remove()}
-‎async function ask(){
-‎  const q=document.getElementById('q').value.trim();
-‎  if(!q||remaining()<=0)return;
-‎  addMsg('user',q);
-‎  document.getElementById('q').value='';
-‎  used++;updateUI();
-‎  showTyping();
-‎  document.getElementById('send').disabled=true;
-‎  try{
-‎    const r=await fetch('https://api.anthropic.com/v1/messages',{
-‎      method:'POST',
-‎      headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_KEY,'anthropic-version':'2023-06-01'},
-‎      body:JSON.stringify({
-‎        model:'claude-haiku-4-5-20251001',
-‎        max_tokens:500,
-‎        system:'Tum Bihar Board Class 10 Science ke expert teacher ho. Sirf Hindi mein answer do. Short aur simple bhasha mein samjhao. Sirf Science ke sawaalon ka jawab do. End mein likho: 💡 Yaad rakho: [key point]',
-‎        messages:[{role:'user',content:q}]
-‎      })
-‎    });
-‎    const data=await r.json();
-‎    removeTyping();
-‎    addMsg('ai',data.content[0].text);
-‎  }catch(e){
-‎    removeTyping();
-‎    addMsg('ai','Abhi server se connect nahi ho pa raha. Thodi der baad try karo.');
-‎  }
-‎  document.getElementById('send').disabled=false;
-‎}
-‎function startAd(){
-‎  document.getElementById('blocked-box').style.display='none';
-‎  document.getElementById('ad-box').style.display='block';
-‎  let t=5;
-‎  document.getElementById('ad-timer').textContent='⏱ '+t+' second mein skip...';
-‎  adTimer=setInterval(()=>{
-‎    t--;
-‎    if(t<=0){clearInterval(adTimer);document.getElementById('ad-timer').style.display='none';document.getElementById('claim-btn').style.display='block';}
-‎    else document.getElementById('ad-timer').textContent='⏱ '+t+' second mein skip...';
-‎  },1000);
-‎}
-‎function claimBonus(){
-‎  bonus+=3;
-‎  document.getElementById('ad-box').style.display='none';
-‎  document.getElementById('input-area').style.display='flex';
-‎  document.getElementById('claim-btn').style.display='none';
-‎  document.getElementById('ad-timer').style.display='block';
-‎  updateUI();
-‎}
-‎</script>
-‎</body>
-‎</html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BoardGPT - Board Science AI Tutor</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,-apple-system,sans-serif;background:#fff;min-height:100vh}
+.app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+
+/* HOME */
+.home{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center}
+.home-icon{font-size:52px;margin-bottom:12px}
+.home-title{font-size:34px;font-weight:800;color:#1a1a1a;letter-spacing:-1px}
+.home-sub{color:#999;font-size:14px;margin-top:6px}
+.lang-toggle{display:flex;background:#f5f5f5;border-radius:12px;padding:4px;margin:28px 0 8px;border:1px solid #e5e5e5}
+.lang-btn{padding:8px 28px;border-radius:8px;border:none;cursor:pointer;font-weight:600;font-size:14px;font-family:inherit;transition:all 0.2s}
+.lang-btn.active{background:#1a1a1a;color:white}
+.lang-btn.inactive{background:transparent;color:#666}
+.select-label{color:#999;font-size:13px;margin-bottom:14px}
+.class-btns{display:flex;gap:16px;margin-bottom:48px}
+.class-btn{width:90px;height:90px;border-radius:18px;border:1.5px solid #e5e5e5;background:#fff;color:#1a1a1a;font-size:28px;font-weight:800;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;box-shadow:0 2px 8px rgba(0,0,0,0.06);transition:all 0.2s;font-family:inherit}
+.class-btn:hover{box-shadow:0 4px 16px rgba(0,0,0,0.12);transform:translateY(-2px)}
+.class-btn span{font-size:10px;color:#999;font-weight:500}
+.home-footer{color:#ddd;font-size:11px;letter-spacing:1px}
+
+/* HEADER */
+.header{padding:12px 16px;border-bottom:1px solid #e5e5e5;display:flex;align-items:center;justify-content:space-between;background:#fff;position:sticky;top:0;z-index:10}
+.header-left{display:flex;align-items:center;gap:8px}
+.back-btn{background:none;border:none;color:#666;font-size:18px;cursor:pointer}
+.header-title{font-weight:700;font-size:16px;color:#1a1a1a}
+.class-badge{background:#f5f5f5;color:#666;font-size:11px;padding:2px 8px;border-radius:6px;font-weight:600}
+.header-right{display:flex;gap:8px;align-items:center}
+.lang-switch{background:#f5f5f5;border:1px solid #e5e5e5;border-radius:8px;padding:4px 10px;color:#666;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit}
+.counter-box{border:1px solid #e5e5e5;border-radius:8px;padding:4px 10px;text-align:center}
+.counter-num{color:#1a1a1a;font-size:14px;font-weight:800;line-height:1}
+.counter-label{color:#999;font-size:9px}
+
+/* PROGRESS */
+.progress{height:3px;background:#f5f5f5}
+.progress-bar{height:100%;background:#1a1a1a;transition:width 0.5s}
+
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid #e5e5e5;background:#fff}
+.tab-btn{flex:1;padding:11px 4px;border:none;background:none;font-size:12px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.2s;font-family:inherit;color:#999}
+.tab-btn.active{color:#1a1a1a;font-weight:700;border-bottom:2px solid #1a1a1a}
+
+/* CHAT */
+.chat-area{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;min-height:52vh;max-height:55vh}
+.welcome{text-align:center;padding:24px 0}
+.welcome-icon{font-size:36px;margin-bottom:8px}
+.welcome-title{color:#1a1a1a;font-weight:700;font-size:15px}
+.welcome-sub{color:#999;font-size:12px;margin-top:4px}
+.sample-btns{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.sample-btn{background:#f9f9f9;border:1px solid #e5e5e5;border-radius:10px;padding:10px 14px;color:#1a1a1a;font-size:13px;text-align:left;cursor:pointer;font-family:inherit}
+.msg{display:flex;flex-direction:column}
+.msg.user{align-self:flex-end;max-width:85%}
+.msg.ai{align-self:flex-start;max-width:85%}
+.bubble{padding:10px 14px;font-size:14px;line-height:1.7;white-space:pre-wrap;border-radius:18px}
+.msg.user .bubble{background:#1a1a1a;color:white;border-radius:18px 18px 4px 18px}
+.msg.ai .bubble{background:#f9f9f9;color:#1a1a1a;border:1px solid #e5e5e5;border-radius:18px 18px 18px 4px}
+.ai-name{color:#999;font-size:11px;font-weight:600;margin-bottom:4px}
+.typing{display:flex;gap:5px;padding:12px 16px;background:#f9f9f9;border:1px solid #e5e5e5;border-radius:18px 18px 18px 4px;align-self:flex-start}
+.dot{width:7px;height:7px;border-radius:50%;background:#999;animation:bounce 1.2s infinite}
+.dot:nth-child(2){animation-delay:0.2s}
+.dot:nth-child(3){animation-delay:0.4s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+
+/* BLOCKED */
+.blocked-box{margin:0 16px 8px;background:#f9f9f9;border:1px solid #e5e5e5;border-radius:12px;padding:14px;text-align:center}
+.blocked-title{font-weight:700;color:#1a1a1a;margin-bottom:8px}
+.blocked-btns{display:flex;gap:8px;margin-top:8px}
+.ad-btn{flex:1;background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:8px;color:#1a1a1a;font-weight:600;font-size:12px;cursor:pointer;font-family:inherit}
+.pay-btn{flex:1;background:#1a1a1a;border:none;border-radius:8px;padding:8px;color:white;font-weight:600;font-size:12px;cursor:pointer;font-family:inherit}
+
+/* AD BOX */
+.ad-box{margin:0 16px 8px;background:#f9f9f9;border:1px solid #e5e5e5;border-radius:12px;padding:14px;text-align:center}
+.ad-label{color:#999;font-size:10px;letter-spacing:1px;margin-bottom:8px}
+.ad-inner{background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:12px;margin-bottom:8px}
+.ad-timer{color:#666;font-weight:600}
+.claim-btn{width:100%;background:#1a1a1a;border:none;border-radius:8px;padding:10px;color:white;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit}
+
+/* INPUT */
+.input-area{padding:10px 16px;border-top:1px solid #e5e5e5;display:flex;gap:8px;align-items:flex-end;background:#fff}
+.input-box{flex:1;background:#f9f9f9;border:1px solid #e5e5e5;border-radius:12px;padding:8px 12px;color:#1a1a1a;font-size:14px;resize:none;outline:none;font-family:inherit}
+.input-box:focus{border-color:#1a1a1a}
+.send-btn{background:#1a1a1a;border:none;border-radius:12px;width:42px;height:42px;color:white;font-size:16px;cursor:pointer;flex-shrink:0}
+.send-btn:disabled{background:#e5e5e5;cursor:not-allowed}
+
+/* MCQ / PYQ / ANALYSIS */
+.tab-content{flex:1;overflow-y:auto;padding:16px}
+.form-label{color:#666;font-size:12px;font-weight:600;display:block;margin-bottom:6px}
+.form-select{width:100%;background:#f9f9f9;border:1px solid #e5e5e5;border-radius:10px;padding:10px 12px;color:#1a1a1a;font-size:14px;outline:none;margin-bottom:16px;font-family:inherit}
+.count-btns{display:flex;gap:8px;margin-bottom:20px}
+.count-btn{flex:1;padding:8px;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;font-family:inherit;transition:all 0.2s}
+.count-btn.active{background:#1a1a1a;border:none;color:white}
+.count-btn.inactive{background:#f9f9f9;border:1px solid #e5e5e5;color:#666}
+.main-btn{width:100%;background:#1a1a1a;border:none;border-radius:12px;padding:14px;color:white;font-weight:700;font-size:15px;cursor:pointer;font-family:inherit;margin-bottom:8px}
+.main-btn:disabled{background:#e5e5e5;color:#999;cursor:not-allowed}
+.error-msg{color:#e53e3e;font-size:13px;margin-bottom:12px;text-align:center}
+.loading-box{text-align:center;padding:48px 0}
+.loading-icon{font-size:36px;margin-bottom:12px}
+.loading-title{color:#1a1a1a;font-weight:700}
+.loading-sub{color:#999;font-size:13px;margin-top:4px}
+.mcq-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.mcq-info{color:#666;font-size:12px;font-weight:600}
+.back-link{background:#f9f9f9;border:1px solid #e5e5e5;border-radius:6px;padding:4px 10px;color:#666;font-size:11px;cursor:pointer;font-family:inherit}
+.mcq-card{background:#f9f9f9;border:1px solid #e5e5e5;border-radius:12px;padding:14px;margin-bottom:12px}
+.mcq-num{color:#999;font-size:11px;margin-bottom:6px}
+.mcq-q{color:#1a1a1a;font-size:14px;line-height:1.6;margin-bottom:10px;font-weight:500}
+.opt-btn{width:100%;border-radius:8px;padding:9px 12px;font-size:13px;text-align:left;cursor:pointer;margin-bottom:6px;font-family:inherit;transition:all 0.2s}
+.opt-btn.selected{background:#1a1a1a;border:none;color:white}
+.opt-btn.unselected{background:#fff;border:1px solid #e5e5e5;color:#1a1a1a}
+.opt-label{font-weight:700;margin-right:6px}
+.submit-btn{width:100%;border:none;border-radius:12px;padding:14px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit}
+.submit-btn.ready{background:#1a1a1a;color:white}
+.submit-btn.notready{background:#e5e5e5;color:#999;cursor:not-allowed}
+
+/* SCORE */
+.score-box{text-align:center;padding:24px 0 20px}
+.score-icon{font-size:48px}
+.score-num{color:#1a1a1a;font-weight:900;font-size:32px;margin-top:8px}
+.score-pct{color:#666;font-size:15px}
+.result-card{background:#f9f9f9;border-radius:10px;padding:12px;margin-bottom:10px}
+.result-card.correct{border:1px solid #38a169}
+.result-card.wrong{border:1px solid #e53e3e}
+.result-q{color:#666;font-size:12px;margin-bottom:4px}
+.result-user{font-size:13px}
+.result-user.correct{color:#38a169}
+.result-user.wrong{color:#e53e3e}
+.result-right{color:#38a169;font-size:13px}
+.result-exp{color:#999;font-size:11px;margin-top:4px}
+.retry-btn{width:100%;background:#1a1a1a;border:none;border-radius:12px;padding:12px;color:white;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;margin-top:8px}
+
+/* PYQ */
+.pyq-card{background:#f9f9f9;border:1px solid #e5e5e5;border-radius:12px;padding:14px;margin-bottom:12px}
+.pyq-header{display:flex;justify-content:space-between;margin-bottom:8px}
+.year-badge{background:#1a1a1a;color:white;font-size:11px;padding:2px 8px;border-radius:6px;font-weight:600}
+.marks-label{color:#999;font-size:12px}
+.pyq-q{color:#1a1a1a;font-size:14px;line-height:1.6;margin-bottom:10px}
+.show-ans-btn{width:100%;background:#fff;border:1px solid #e5e5e5;border-radius:8px;padding:8px;color:#1a1a1a;font-weight:600;font-size:13px;cursor:pointer;font-family:inherit}
+.ans-box{background:#f0fff4;border:1px solid #c6f6d5;border-radius:8px;padding:10px;color:#276749;font-size:13px;line-height:1.6;margin-bottom:6px}
+.tip-box{color:#999;font-size:12px}
+
+/* ANALYSIS */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.stat-card{background:#f9f9f9;border:1px solid #e5e5e5;border-radius:12px;padding:14px;text-align:center}
+.stat-icon{font-size:22px}
+.stat-val{color:#1a1a1a;font-size:22px;font-weight:800;margin-top:4px}
+.stat-label{color:#999;font-size:11px;margin-top:2px}
+.no-data{text-align:center;padding:40px}
+.no-data-icon{font-size:36px}
+.no-data-text{color:#999;margin-top:8px;font-size:14px}
+.section-title{font-size:13px;font-weight:700;margin-bottom:10px}
+.section-title.weak{color:#e53e3e}
+.section-title.strong{color:#38a169}
+.area-card{border-radius:10px;padding:10px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.area-card.weak{background:#fff5f5;border:1px solid #fed7d7}
+.area-card.strong{background:#f0fff4;border:1px solid #c6f6d5}
+.area-name{color:#1a1a1a;font-size:13px}
+.area-badge{font-size:12px;font-weight:700;border-radius:6px;padding:2px 8px}
+.area-badge.weak{color:#e53e3e}
+.area-badge.strong{color:#38a169}
+
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:#e5e5e5;border-radius:4px}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+// ══════════════════════════════════════
+// CONFIG — APNI KEY YAHAN DAALO
+// ══════════════════════════════════════
+const GEMINI_KEY = "AIzaSyA2Acr1j48NtS74Wa0x-xtTCPRCsKS_ZB4";
+const GEMINI_MODEL_CHAT = "gemini-2.5-flash";
+const GEMINI_MODEL_WEB  = "gemini-2.5-flash";
+
+// ══════════════════════════════════════
+// DATA
+// ══════════════════════════════════════
+const CHAPTERS = {
+  10: ["Chemical Reactions & Equations","Acids, Bases & Salts","Metals & Non-Metals","Carbon & its Compounds","Periodic Classification","Life Processes","Control & Coordination","Reproduction","Heredity & Evolution","Light – Reflection & Refraction","Human Eye","Electricity","Magnetic Effects","Sources of Energy","Environment & Ecosystem"],
+  11: ["Physical World & Measurement","Kinematics","Laws of Motion","Work, Energy & Power","Gravitation","Thermodynamics","Kinetic Theory","Oscillations & Waves","Structure of Atom","Chemical Bonding","States of Matter","Equilibrium","Redox Reactions","s-Block Elements","p-Block Elements","Organic Chemistry","Hydrocarbons","Cell Biology","Biomolecules","Plant Kingdom","Animal Kingdom"],
+  12: ["Electric Charges & Fields","Current Electricity","Magnetism","Electromagnetic Induction","Alternating Current","Wave Optics","Dual Nature of Radiation","Atoms & Nuclei","Semiconductors","Solid State","Electrochemistry","Chemical Kinetics","Surface Chemistry","Coordination Compounds","Haloalkanes","Alcohols & Phenols","Aldehydes & Ketones","Amines","Biomolecules","Genetics & Evolution","Human Health & Disease","Biotechnology","Ecosystem"]
+};
+
+const SAMPLES = {
+  10:{hi:["Photosynthesis kya hai?","Ohm ka niyam batao","DNA kya hota hai?"],en:["What is Photosynthesis?","Explain Ohm's Law","What is DNA?"]},
+  11:{hi:["Newton ke niyam batao","Boyle's law samjhao","Aufbau principle kya hai?"],en:["Explain Newton's Laws","What is Boyle's Law?","What is Aufbau Principle?"]},
+  12:{hi:["Faraday ka niyam batao","Half life kya hai?","Electrochemistry samjhao"],en:["Explain Faraday's Law","What is Half Life?","Explain Electrochemistry"]}
+};
+
+const T = {
+  hi:{
+    subtitle:"Board Science AI Tutor",selectClass:"अपनी Class चुनो",
+    chat:"💬 Chat",mcq:"📝 MCQ",pyq:"📜 PYQ",analysis:"📊",
+    remaining:"bache",placeholder:"Koi bhi Science sawaal poochho...",
+    welcomeTitle:"Koi bhi sawaal poochho",welcomeSub:"NCERT • No Web Search",
+    blockedTitle:"Free limit khatam!",watchAd:"📺 Ad Dekho (+3)",subscribe:"⭐ ₹49/month",
+    adClaim:"🎉 +3 Sawaal Claim Karo!",
+    chapterLabel:"Chapter",countLabel:"Kitne MCQ?",generateBtn:"⚡ MCQ Generate Karo",
+    generating:"Generate ho raha hai...",back:"← Back",submitBtn:"✓ Submit",
+    retryBtn:"🔄 Dobara Karo",showAns:"👁 Answer Dekho",
+    pyqFetch:"🔍 PYQ Khojo",fetching:"Khoj raha hai...",lastYears:"Pichle kitne saal?",
+    noData:"Abhi data nahi — MCQ solve karo!",
+    statAsked:"Sawaal Poochhe",statMCQ:"MCQ Solve",statCorrect:"Sahi Jawab",statAcc:"Accuracy",
+    weak:"📉 Weak Areas",strong:"📈 Strong Areas",
+    mcqError:"MCQ generate nahi hua. Dobara try karo.",
+    pyqError:"PYQ load nahi hua. Dobara try karo.",
+    serverError:"Server error. Dobara try karo."
+  },
+  en:{
+    subtitle:"Board Science AI Tutor",selectClass:"Select Your Class",
+    chat:"💬 Chat",mcq:"📝 MCQ",pyq:"📜 PYQ",analysis:"📊",
+    remaining:"left",placeholder:"Ask any Science question...",
+    welcomeTitle:"Ask any question",welcomeSub:"NCERT • No Web Search",
+    blockedTitle:"Free limit over!",watchAd:"📺 Watch Ad (+3)",subscribe:"⭐ ₹49/month",
+    adClaim:"🎉 Claim +3 Questions!",
+    chapterLabel:"Chapter",countLabel:"How many MCQs?",generateBtn:"⚡ Generate MCQ",
+    generating:"Generating...",back:"← Back",submitBtn:"✓ Submit",
+    retryBtn:"🔄 Try Again",showAns:"👁 Show Answer",
+    pyqFetch:"🔍 Find PYQ",fetching:"Searching...",lastYears:"Last how many years?",
+    noData:"No data yet — solve MCQs!",
+    statAsked:"Questions Asked",statMCQ:"MCQ Solved",statCorrect:"Correct",statAcc:"Accuracy",
+    weak:"📉 Weak Areas",strong:"📈 Strong Areas",
+    mcqError:"Could not generate MCQ. Try again.",
+    pyqError:"Could not load PYQ. Try again.",
+    serverError:"Server error. Please try again."
+  }
+};
+
+// ══════════════════════════════════════
+// STATE
+// ══════════════════════════════════════
+let state = {
+  screen:"home", cls:null, lang:"hi", tab:"chat",
+  messages:[], question:"", chatLoading:false,
+  used:0, bonus:0, LIMIT:15,
+  showAd:false, adTimer:5, adDone:false,
+  mcqChapter:"", mcqCount:20, mcqs:[], mcqLoading:false,
+  mcqAnswers:{}, mcqScore:null, mcqError:"",
+  pyqChapter:"", pyqYears:5, pyqs:[], pyqLoading:false,
+  pyqRevealed:{}, pyqError:"",
+  weakMap:{}, strongMap:{},
+  totalAsked:0, totalMCQ:0, totalCorrect:0
+};
+
+function setState(partial){ state = {...state,...partial}; render(); }
+function remaining(){ return Math.max(0, state.LIMIT + state.bonus - state.used); }
+function isBlocked(){ return remaining() <= 0; }
+function t(){ return T[state.lang]; }
+function ch(){ return state.cls ? CHAPTERS[state.cls] : []; }
+
+// ══════════════════════════════════════
+// GEMINI API
+// ══════════════════════════════════════
+async function callGemini(prompt, useWeb=false){
+  const model = useWeb ? GEMINI_MODEL_WEB : GEMINI_MODEL_CHAT;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`;
+  const body = { contents:[{ parts:[{ text:prompt }] }] };
+  if(useWeb) body.tools = [{ google_search:{} }];
+  const res = await fetch(url,{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body) });
+  const data = await res.json();
+  if(data.error) throw new Error(data.error.message);
+  return data?.candidates?.[0]?.content?.parts?.map(p=>p.text||"").join("") || "";
+}
+
+// ══════════════════════════════════════
+// ACTIONS
+// ══════════════════════════════════════
+function initClass(c){
+  setState({ cls:c, screen:"app", tab:"chat", messages:[],
+    mcqChapter:CHAPTERS[c][0], pyqChapter:CHAPTERS[c][0] });
+}
+
+async function sendChat(){
+  const q = state.question.trim();
+  if(!q || state.chatLoading || isBlocked()) return;
+  const msgs = [...state.messages, {role:"user",text:q}];
+  setState({ messages:msgs, question:"", chatLoading:true,
+    used:state.used+1, totalAsked:state.totalAsked+1 });
+  try{
+    const lang = state.lang;
+    const cls = state.cls;
+    const prompt = lang === "hi"
+      ? `Tum BoardGPT ke expert Science teacher ho.
+Rules:
+- Sirf Class ${cls} NCERT Science ke sawaalon ka jawab do
+- Agar Science ke alawa kuch pucha jaye to bolو: "Maaf karo, main sirf Science ke sawaalon ka jawab de sakta hun."
+- Sirf NCERT syllabus se answer do — web search bilkul nahi
+- Hamesha HINDI mein jawab do
+- Short answer do (2-3 lines) jab tak user "detail mein" ya "explain karo" na kahe
+- End mein: 💡 Yaad rakho: [ek key point]
+
+Sawaal: ${q}`
+      : `You are BoardGPT, an expert Science teacher.
+Rules:
+- Only answer Class ${cls} NCERT Science questions
+- If asked anything other than Science, say: "Sorry, I can only answer Science questions."
+- Answer only from NCERT syllabus — no web search
+- Always answer in ENGLISH
+- Give short answers (2-3 lines) unless user asks to "explain in detail"
+- End with: 💡 Remember: [one key point]
+
+Question: ${q}`;
+    const text = await callGemini(prompt, false);
+    setState({ messages:[...msgs,{role:"ai",text}], chatLoading:false });
+  } catch(e){
+    setState({ messages:[...msgs,{role:"ai",text:t().serverError}], chatLoading:false });
+  }
+}
+
+async function generateMCQ(){
+  const chapter = state.mcqChapter;
+  const count = state.mcqCount;
+  const cls = state.cls;
+  const lang = state.lang;
+  if(!chapter) return;
+  setState({ mcqs:[], mcqAnswers:{}, mcqScore:null, mcqError:"", mcqLoading:true });
+  try{
+    const prompt = `You are a Bihar Board Class ${cls} Science expert.
+Generate exactly ${count} MCQ questions on "${chapter}" from NCERT syllabus only. No web search.
+Language for explanations: ${lang === "hi" ? "Hindi" : "English"}
+
+Return ONLY valid JSON, no markdown, no extra text:
+{"mcqs":[{"q":"question text","a":"Option A","b":"Option B","c":"Option C","d":"Option D","ans":"a","exp":"brief explanation"}]}`;
+    const text = await callGemini(prompt, false);
+    const match = text.match(/\{[\s\S]*\}/);
+    if(!match) throw new Error("no json");
+    const parsed = JSON.parse(match[0]);
+    if(!parsed.mcqs?.length) throw new Error("empty");
+    setState({ mcqs:parsed.mcqs, mcqLoading:false });
+  } catch(e){
+    setState({ mcqError:t().mcqError, mcqLoading:false });
+  }
+}
+
+function selectOpt(i, opt){
+  setState({ mcqAnswers:{...state.mcqA
