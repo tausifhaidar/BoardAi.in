@@ -339,4 +339,294 @@ Return ONLY valid JSON, no markdown, no extra text:
 }
 
 function selectOpt(i, opt){
-  setState({ mcqAnswers:{...state.mcqA
+  setState({ mcqAnswers:{...state.mcqAnswers,[i]:opt} });
+}
+
+function submitMCQ(){
+  let correct=0;
+  state.mcqs.forEach((m,i)=>{ if(state.mcqAnswers[i]===m.ans) correct++; });
+  const ratio = correct/state.mcqs.length;
+  const ch = state.mcqChapter;
+  setState({
+    mcqScore:{correct,total:state.mcqs.length},
+    totalMCQ:state.totalMCQ+state.mcqs.length,
+    totalCorrect:state.totalCorrect+correct,
+    strongMap: ratio>=0.6 ? {...state.strongMap,[ch]:(state.strongMap[ch]||0)+1} : state.strongMap,
+    weakMap:   ratio<0.6  ? {...state.weakMap,[ch]:(state.weakMap[ch]||0)+1}   : state.weakMap
+  });
+}
+
+async function fetchPYQ(){
+  const chapter = state.pyqChapter;
+  const years = state.pyqYears;
+  const cls = state.cls;
+  const lang = state.lang;
+  if(!chapter) return;
+  setState({ pyqs:[], pyqRevealed:{}, pyqError:"", pyqLoading:true });
+  try{
+    const prompt = `Search and find real Bihar Board Class ${cls} Science previous year exam questions for "${chapter}" from last ${years} years.
+Answer language: ${lang === "hi" ? "Hindi" : "English"}
+
+Return ONLY valid JSON, no markdown:
+{"pyqs":[{"year":2023,"q":"exact question","marks":2,"ans":"detailed answer","tip":"exam tip"}]}`;
+    const text = await callGemini(prompt, true);
+    const match = text.match(/\{[\s\S]*\}/);
+    if(!match) throw new Error("no json");
+    const parsed = JSON.parse(match[0]);
+    if(!parsed.pyqs?.length) throw new Error("empty");
+    setState({ pyqs:parsed.pyqs, pyqLoading:false });
+  } catch(e){
+    setState({ pyqError:t().pyqError, pyqLoading:false });
+  }
+}
+
+function startAd(){
+  setState({ showAd:true, adDone:false, adTimer:5 });
+  const interval = setInterval(()=>{
+    if(state.adTimer<=1){ clearInterval(interval); setState({adDone:true,adTimer:0}); }
+    else setState({adTimer:state.adTimer-1});
+  },1000);
+}
+
+function claimBonus(){ setState({ bonus:state.bonus+3, showAd:false }); }
+
+// ══════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════
+function render(){
+  document.getElementById("app").innerHTML = state.screen==="home" ? renderHome() : renderApp();
+  bindEvents();
+}
+
+function renderHome(){
+  const lang = state.lang;
+  return `
+<div class="home">
+  <div class="home-icon">🎓</div>
+  <h1 class="home-title">BoardGPT</h1>
+  <p class="home-sub">${T[lang].subtitle}</p>
+  <div class="lang-toggle">
+    <button class="lang-btn ${lang==='hi'?'active':'inactive'}" onclick="setState({lang:'hi'})">हिंदी</button>
+    <button class="lang-btn ${lang==='en'?'active':'inactive'}" onclick="setState({lang:'en'})">English</button>
+  </div>
+  <p class="select-label">${T[lang].selectClass}</p>
+  <div class="class-btns">
+    ${[10,11,12].map(c=>`
+      <button class="class-btn" onclick="initClass(${c})">
+        ${c}<span>Class</span>
+      </button>`).join("")}
+  </div>
+  <p class="home-footer">NCERT</p>
+</div>`;
+}
+
+function renderApp(){
+  const lang = state.lang;
+  const cls = state.cls;
+  const tab = state.tab;
+  const rem = remaining();
+  return `
+<div class="header">
+  <div class="header-left">
+    <button class="back-btn" onclick="setState({screen:'home'})">←</button>
+    <span class="header-title">🎓 BoardGPT</span>
+    <span class="class-badge">Class ${cls}</span>
+  </div>
+  <div class="header-right">
+    <button class="lang-switch" onclick="setState({lang:state.lang==='hi'?'en':'hi'})">${lang==='hi'?'EN':'हि'}</button>
+    ${tab==='chat'?`<div class="counter-box"><div class="counter-num">${rem}</div><div class="counter-label">${t().remaining}</div></div>`:''}
+  </div>
+</div>
+<div class="progress"><div class="progress-bar" style="width:${Math.min(100,(state.used/(state.LIMIT+state.bonus))*100)}%"></div></div>
+<div class="tabs">
+  ${[['chat',t().chat],['mcq',t().mcq],['pyq',t().pyq],['analysis',t().analysis]].map(([tb,label])=>
+    `<button class="tab-btn ${tab===tb?'active':''}" onclick="setState({tab:'${tb}'})">${label}</button>`
+  ).join("")}
+</div>
+${tab==='chat' ? renderChat() : ''}
+${tab==='mcq'  ? renderMCQ()  : ''}
+${tab==='pyq'  ? renderPYQ()  : ''}
+${tab==='analysis' ? renderAnalysis() : ''}`;
+}
+
+function renderChat(){
+  const msgs = state.messages;
+  const q = state.question;
+  const loading = state.chatLoading;
+  const blocked = isBlocked();
+  return `
+<div class="chat-area" id="chatArea">
+  ${msgs.length===0 ? `
+    <div class="welcome">
+      <div class="welcome-icon">⚡</div>
+      <div class="welcome-title">${t().welcomeTitle}</div>
+      <div class="welcome-sub">Class ${state.cls} • ${t().welcomeSub}</div>
+      <div class="sample-btns">
+        ${SAMPLES[state.cls][state.lang].map(sq=>`
+          <button class="sample-btn" onclick="setState({question:'${sq.replace(/'/g,"\\'")}'})"">💬 ${sq}</button>
+        `).join("")}
+      </div>
+    </div>` : ''}
+  ${msgs.map(m=>`
+    <div class="msg ${m.role}">
+      ${m.role==='ai'?`<div class="ai-name">BoardGPT</div>`:''}
+      <div class="bubble">${m.text.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>')}</div>
+    </div>`).join("")}
+  ${loading ? `<div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>` : ''}
+</div>
+${blocked && !state.showAd ? `
+  <div class="blocked-box">
+    <div class="blocked-title">🔒 ${t().blockedTitle}</div>
+    <div class="blocked-btns">
+      <button class="ad-btn" onclick="startAd()">${t().watchAd}</button>
+      <button class="pay-btn">${t().subscribe}</button>
+    </div>
+  </div>` : ''}
+${state.showAd ? `
+  <div class="ad-box">
+    <div class="ad-label">ADVERTISEMENT</div>
+    <div class="ad-inner">
+      <div style="font-size:24px">🏫</div>
+      <div style="font-weight:700;color:#1a1a1a">Rajesh Coaching Classes</div>
+      <div style="color:#999;font-size:12px">Patna • Bihar Board Expert</div>
+    </div>
+    ${!state.adDone
+      ? `<div class="ad-timer">⏱ ${state.adTimer}s</div>`
+      : `<button class="claim-btn" onclick="claimBonus()">${t().adClaim}</button>`}
+  </div>` : ''}
+${!blocked ? `
+  <div class="input-area">
+    <textarea class="input-box" id="chatInput" rows="2" placeholder="${t().placeholder}">${q}</textarea>
+    <button class="send-btn" id="sendBtn" ${loading||!q.trim()?'disabled':''} onclick="sendChat()">▶</button>
+  </div>` : ''}`;
+}
+
+function renderMCQ(){
+  const {mcqs,mcqLoading,mcqError,mcqAnswers,mcqScore,mcqChapter,mcqCount} = state;
+  if(mcqLoading) return `<div class="tab-content"><div class="loading-box"><div class="loading-icon">⚡</div><div class="loading-title">${t().generating}</div><div class="loading-sub">${mcqCount} MCQs • ${mcqChapter}</div></div></div>`;
+  if(mcqScore) return `
+<div class="tab-content">
+  <div class="score-box">
+    <div class="score-icon">${mcqScore.correct/mcqScore.total>=0.6?'🏆':'📚'}</div>
+    <div class="score-num">${mcqScore.correct}/${mcqScore.total}</div>
+    <div class="score-pct">${Math.round((mcqScore.correct/mcqScore.total)*100)}% ${state.lang==='hi'?'sahi':'correct'}</div>
+  </div>
+  ${mcqs.map((m,i)=>`
+    <div class="result-card ${mcqAnswers[i]===m.ans?'correct':'wrong'}">
+      <div class="result-q">Q${i+1}. ${escHtml(m.q)}</div>
+      <div class="result-user ${mcqAnswers[i]===m.ans?'correct':'wrong'}">${mcqAnswers[i]===m.ans?'✅':'❌'} ${escHtml(m[mcqAnswers[i]]||'')}</div>
+      ${mcqAnswers[i]!==m.ans?`<div class="result-right">✓ ${escHtml(m[m.ans])}</div>`:''}
+      <div class="result-exp">💡 ${escHtml(m.exp)}</div>
+    </div>`).join("")}
+  <button class="retry-btn" onclick="setState({mcqs:[],mcqAnswers:{},mcqScore:null})">${t().retryBtn}</button>
+</div>`;
+  if(mcqs.length>0) return `
+<div class="tab-content">
+  <div class="mcq-header">
+    <span class="mcq-info">${mcqs.length} MCQ • ${mcqChapter}</span>
+    <button class="back-link" onclick="setState({mcqs:[],mcqError:''})">${t().back}</button>
+  </div>
+  ${mcqs.map((m,i)=>`
+    <div class="mcq-card">
+      <div class="mcq-num">Q ${i+1}</div>
+      <div class="mcq-q">${escHtml(m.q)}</div>
+      ${['a','b','c','d'].map(opt=>`
+        <button class="opt-btn ${mcqAnswers[i]===opt?'selected':'unselected'}" onclick="selectOpt(${i},'${opt}')">
+          <span class="opt-label">${opt.toUpperCase()}.</span>${escHtml(m[opt]||'')}
+        </button>`).join("")}
+    </div>`).join("")}
+  <button class="submit-btn ${Object.keys(mcqAnswers).length<mcqs.length?'notready':'ready'}" onclick="submitMCQ()" ${Object.keys(mcqAnswers).length<mcqs.length?'disabled':''}>
+    ${t().submitBtn} (${Object.keys(mcqAnswers).length}/${mcqs.length})
+  </button>
+</div>`;
+  return `
+<div class="tab-content">
+  <label class="form-label">${t().chapterLabel}</label>
+  <select class="form-select" onchange="setState({mcqChapter:this.value})">
+    ${ch().map(c=>`<option value="${c}" ${state.mcqChapter===c?'selected':''}>${c}</option>`).join("")}
+  </select>
+  <label class="form-label">${t().countLabel}</label>
+  <div class="count-btns">
+    ${[20,30,40,50].map(n=>`<button class="count-btn ${mcqCount===n?'active':'inactive'}" onclick="setState({mcqCount:${n}})">${n}</button>`).join("")}
+  </div>
+  ${mcqError?`<div class="error-msg">${mcqError}</div>`:''}
+  <button class="main-btn" onclick="generateMCQ()">${t().generateBtn}</button>
+</div>`;
+}
+
+function renderPYQ(){
+  const {pyqs,pyqLoading,pyqError,pyqRevealed,pyqYears} = state;
+  return `
+<div class="tab-content">
+  <label class="form-label">${t().chapterLabel}</label>
+  <select class="form-select" onchange="setState({pyqChapter:this.value})">
+    ${ch().map(c=>`<option value="${c}" ${state.pyqChapter===c?'selected':''}>${c}</option>`).join("")}
+  </select>
+  <label class="form-label">${t().lastYears}</label>
+  <div class="count-btns" style="margin-bottom:20px">
+    ${[3,5,7,10].map(y=>`<button class="count-btn ${pyqYears===y?'active':'inactive'}" onclick="setState({pyqYears:${y}})">${y}yr</button>`).join("")}
+  </div>
+  ${pyqError?`<div class="error-msg">${pyqError}</div>`:''}
+  <button class="main-btn" onclick="fetchPYQ()">${t().pyqFetch}</button>
+  ${pyqLoading?`<div class="loading-box"><div class="loading-icon">🔍</div><div class="loading-title">${t().fetching}</div><div class="loading-sub">Bihar Board • ${state.pyqChapter}</div></div>`:''}
+  ${pyqs.map((p,i)=>`
+    <div class="pyq-card">
+      <div class="pyq-header">
+        <span class="year-badge">${p.year}</span>
+        <span class="marks-label">${p.marks} marks</span>
+      </div>
+      <div class="pyq-q">${escHtml(p.q)}</div>
+      ${!pyqRevealed[i]
+        ? `<button class="show-ans-btn" onclick="revealPYQ(${i})">${t().showAns}</button>`
+        : `<div class="ans-box">✅ ${escHtml(p.ans)}</div>${p.tip?`<div class="tip-box">💡 ${escHtml(p.tip)}</div>`:''}`}
+    </div>`).join("")}
+</div>`;
+}
+
+function renderAnalysis(){
+  const {weakMap,strongMap,totalAsked,totalMCQ,totalCorrect} = state;
+  const acc = totalMCQ ? Math.round((totalCorrect/totalMCQ)*100)+"%" : "—";
+  const hasData = Object.keys(weakMap).length>0 || Object.keys(strongMap).length>0;
+  return `
+<div class="tab-content">
+  <div class="stats-grid">
+    ${[[t().statAsked,totalAsked,"⚡"],[t().statMCQ,totalMCQ,"📝"],[t().statCorrect,totalCorrect,"✅"],[t().statAcc,acc,"🎯"]].map(([label,val,icon])=>`
+      <div class="stat-card"><div class="stat-icon">${icon}</div><div class="stat-val">${val}</div><div class="stat-label">${label}</div></div>`).join("")}
+  </div>
+  ${!hasData ? `<div class="no-data"><div class="no-data-icon">📊</div><div class="no-data-text">${t().noData}</div></div>` : `
+    ${Object.keys(weakMap).length>0?`
+      <div class="section-title weak">${t().weak}</div>
+      ${Object.entries(weakMap).sort((a,b)=>b[1]-a[1]).map(([ch,c])=>`
+        <div class="area-card weak"><span class="area-name">${ch}</span><span class="area-badge weak">${c}x</span></div>`).join("")}`:''}
+    ${Object.keys(strongMap).length>0?`
+      <div class="section-title strong" style="margin-top:16px">${t().strong}</div>
+      ${Object.entries(strongMap).sort((a,b)=>b[1]-a[1]).map(([ch,c])=>`
+        <div class="area-card strong"><span class="area-name">${ch}</span><span class="area-badge strong">${c}x</span></div>`).join("")}`:''}
+  `}
+</div>`;
+  }
+  // ══════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════
+function escHtml(str){ return (str||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+function revealPYQ(i){ setState({pyqRevealed:{...state.pyqRevealed,[i]:true}}); }
+
+function bindEvents(){
+  const inp = document.getElementById("chatInput");
+  if(inp){
+    inp.addEventListener("input",e=>{ state.question=e.target.value; });
+    inp.addEventListener("keydown",e=>{ if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendChat();} });
+    inp.value = state.question;
+    setTimeout(()=>{ const ca=document.getElementById("chatArea"); if(ca) ca.scrollTop=ca.scrollHeight; },50);
+  }
+}
+
+// ══════════════════════════════════════
+// INIT
+// ══════════════════════════════════════
+render();
+</script>
+</body>
+</html>
+
