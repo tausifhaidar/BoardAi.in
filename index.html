@@ -1,1 +1,1257 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>BoardAI - Board Exam AI Tutor</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Inter',system-ui,sans-serif;background:#fff;color:#0f172a;overflow-x:hidden}
+button,select,textarea{font-family:'Inter',system-ui,sans-serif}
+:root{
+  --blue:#2563eb;--blue-l:#eff6ff;--blue-b:#bfdbfe;
+  --dark:#0f172a;--dark2:#1e293b;--gray:#64748b;
+  --light:#f8fafc;--border:#e2e8f0;--border2:#f1f5f9;
+  --green:#16a34a;--red:#dc2626;--yellow:#d97706;
+}
+  
+/* ═══════════════ HOMEPAGE ═══════════════ */
+.homepage{min-height:100vh;background:#fff;display:flex;flex-direction:column}
+.hp-nav{padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border2)}
+.logo-text{font-size:20px;font-weight:900;letter-spacing:-0.5px}
+.logo-text em{color:var(--blue);font-style:normal}
+.lang-toggle{display:flex;background:var(--light);border-radius:9px;padding:3px;border:1px solid var(--border)}
+.lt-btn{padding:5px 14px;border-radius:7px;border:none;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s;background:transparent;color:var(--gray)}
+.lt-btn.on{background:var(--dark);color:#fff}
+.hp-hero{padding:28px 20px 20px;text-align:center}
+.hp-chip{display:inline-flex;align-items:center;gap:5px;background:var(--blue-l);color:var(--blue);border-radius:20px;padding:5px 13px;font-size:11px;font-weight:700;margin-bottom:14px}
+.hp-h1{font-size:27px;font-weight:900;line-height:1.2;letter-spacing:-0.8px;margin-bottom:10px}
+.hp-h1 em{color:var(--blue);font-style:normal}
+.hp-sub{font-size:13px;color:var(--gray);line-height:1.6;margin-bottom:20px}
+.hp-cta{width:100%;background:var(--dark);color:#fff;border:none;border-radius:14px;padding:15px;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.hp-free{font-size:11px;color:#94a3b8;margin-top:8px;text-align:center}
+.hp-section{padding:0 20px 22px}
+.sec-label{font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;text-align:center}
+.board-grid{display:flex;gap:12px}
+.board-card{flex:1;border:1.5px solid var(--border);border-radius:14px;padding:18px 12px;text-align:center;cursor:pointer;transition:all 0.18s}
+.board-card:active{border-color:var(--blue);background:var(--blue-l)}
+.bc-icon{font-size:26px;margin-bottom:7px}
+.bc-name{font-size:15px;font-weight:800}
+.bc-sub{font-size:10px;color:var(--gray);margin-top:3px}
+.feat-grid{display:flex;flex-direction:column;gap:9px}
+.feat-card{display:flex;align-items:center;gap:13px;background:var(--light);border:1px solid var(--border2);border-radius:14px;padding:13px}
+.feat-ic{font-size:24px;min-width:32px;text-align:center}
+.feat-title{font-size:13px;font-weight:700;margin-bottom:2px}
+.feat-desc{font-size:11px;color:var(--gray);line-height:1.4}
+.feat-tag-free{font-size:9px;background:var(--blue-l);color:var(--blue);padding:2px 6px;border-radius:4px;font-weight:700;display:inline-block;margin-top:3px}
+.feat-tag-pro{font-size:9px;background:#fef3c7;color:var(--yellow);padding:2px 6px;border-radius:4px;font-weight:700;display:inline-block;margin-top:3px}
+.step-list{display:flex;flex-direction:column;gap:10px}
+.step-row{display:flex;align-items:flex-start;gap:12px}
+.step-num{width:26px;height:26px;background:var(--dark);color:#fff;border-radius:50%;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.step-txt{font-size:13px;color:var(--gray);line-height:1.5}
+.testi-grid{display:flex;flex-direction:column;gap:8px}
+.testi-card{background:var(--light);border:1px solid var(--border2);border-radius:12px;padding:12px 14px}
+.testi-text{font-size:13px;line-height:1.5;margin-bottom:5px}
+.testi-auth{font-size:11px;color:var(--gray);font-weight:600}
+.price-row{display:inline-flex;gap:8px;background:var(--light);border:1px solid var(--border);border-radius:20px;padding:6px 16px;font-size:13px;margin-bottom:5px}
+.price-note{font-size:11px;color:#94a3b8}
+
+/* ═══════════════ SELECT PAGES ═══════════════ */
+.select-page{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px;background:#fff}
+.sel-back{display:flex;align-items:center;gap:6px;color:var(--gray);font-size:13px;cursor:pointer;align-self:flex-start;border:1px solid var(--border);border-radius:9px;padding:6px 12px;background:var(--light);margin-bottom:24px;font-weight:500}
+.sel-label{font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:2px;text-transform:uppercase;margin:16px 0 14px;text-align:center}
+.sel-cards{display:flex;gap:12px;width:100%}
+.sel-card{flex:1;border:1.5px solid var(--border);border-radius:14px;padding:22px 12px;text-align:center;cursor:pointer;transition:all 0.18s}
+.sel-card:active{border-color:var(--blue);background:var(--blue-l)}
+.sel-card .si{font-size:30px;margin-bottom:9px}
+.sel-card .sn{font-size:15px;font-weight:800}
+.sel-card .ss{font-size:11px;color:var(--gray);margin-top:3px}
+.cls-cards{display:flex;gap:14px}
+.cls-card{width:88px;height:88px;border:1.5px solid var(--border);border-radius:18px;background:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;transition:all 0.18s;box-shadow:0 1px 4px rgba(0,0,0,0.04)}
+.cls-card:active{border-color:var(--blue);background:var(--blue-l)}
+.cls-num{font-size:30px;font-weight:900}
+.cls-lbl{font-size:9px;color:#94a3b8;font-weight:700;letter-spacing:1px}
+
+  /* ═══════════════ APP LAYOUT ═══════════════ */
+.app-layout{display:flex;height:100vh;background:#fff;position:relative;overflow:hidden}
+.side-menu{width:240px;height:100vh;background:var(--dark);display:flex;flex-direction:column;position:absolute;left:0;top:0;z-index:200;transform:translateX(-240px);transition:transform 0.25s cubic-bezier(.4,0,.2,1);box-shadow:4px 0 20px rgba(0,0,0,0.3)}
+.side-menu.open{transform:translateX(0)}
+.sm-header{padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,0.07)}
+.sm-logo{display:flex;align-items:center;gap:8px}
+.sm-logo-text{font-size:17px;font-weight:900;color:#fff;letter-spacing:-0.3px}
+.sm-logo-text em{color:#60a5fa;font-style:normal}
+.sm-meta{font-size:10px;color:#94a3b8;margin-top:3px}
+.sm-user{display:flex;align-items:center;gap:8px;margin-top:10px;padding:8px;background:rgba(255,255,255,0.05);border-radius:8px}
+.sm-avatar{width:28px;height:28px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
+.sm-user-name{font-size:11px;color:#e2e8f0;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sm-plan-badge{font-size:8px;padding:2px 5px;border-radius:4px;font-weight:700}
+.sm-plan-badge.free{background:rgba(255,255,255,0.1);color:#94a3b8}
+.sm-plan-badge.premium{background:#fbbf24;color:#1a1a1a}
+.sm-nav{flex:1;padding:10px 8px;display:flex;flex-direction:column;gap:2px}
+.sm-item{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:10px;cursor:pointer;transition:all 0.15s;border:none;background:none;width:100%;text-align:left;color:rgba(255,255,255,0.55);font-size:13px;font-weight:500;font-family:inherit}
+.sm-item:hover{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.85)}
+.sm-item.active{background:rgba(96,165,250,0.18);color:#fff;font-weight:600}
+.sm-item-icon{font-size:17px;min-width:22px;text-align:center}
+.sm-divider{height:1px;background:rgba(255,255,255,0.07);margin:8px 0}
+.sm-footer{padding:12px 8px 16px;display:flex;flex-direction:column;gap:8px}
+.sm-upgrade-btn{width:100%;background:linear-gradient(135deg,#2563eb,#1d4ed8);border:none;border-radius:10px;padding:11px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.sm-logout-btn{width:100%;background:rgba(255,255,255,0.07);border:none;border-radius:10px;padding:9px;color:#94a3b8;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit}
+.menu-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:199}
+.menu-overlay.show{display:block}
+.main-content{flex:1;display:flex;flex-direction:column;overflow:hidden;width:100%}
+
+/* ═══════════════ TOPBAR ═══════════════ */
+.topbar{padding:10px 14px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;background:#fff;flex-shrink:0}
+.topbar-left{display:flex;align-items:center;gap:10px}
+.menu-toggle{background:none;border:none;padding:5px;color:var(--gray);cursor:pointer;border-radius:8px;display:flex;align-items:center}
+.topbar-title{font-size:15px;font-weight:700}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.lang-sw{background:var(--light);border:1px solid var(--border);border-radius:8px;padding:4px 9px;color:var(--gray);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit}
+
+  /* ═══════════════ CHAT ═══════════════ */
+.chat-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.chat-messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:11px}
+.chat-messages::-webkit-scrollbar{width:3px}
+.chat-messages::-webkit-scrollbar-thumb{background:var(--border)}
+.welcome-state{display:flex;flex-direction:column;align-items:center;padding:18px 0 14px;text-align:center}
+.welcome-icon{width:50px;height:50px;background:var(--dark);border-radius:15px;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+.welcome-title{font-size:16px;font-weight:800;margin-bottom:4px}
+.welcome-sub{font-size:12px;color:var(--gray);line-height:1.5;margin-bottom:16px}
+.sample-list{width:100%;display:flex;flex-direction:column;gap:6px}
+.sample-btn{background:var(--light);border:1px solid var(--border2);border-radius:10px;padding:10px 14px;color:var(--dark);font-size:13px;text-align:left;cursor:pointer;display:flex;align-items:center;gap:9px;font-family:inherit}
+.msg-row{display:flex;flex-direction:column}
+.msg-row.user{align-items:flex-end}
+.msg-row.ai{align-items:flex-start}
+.msg-bubble{max-width:88%;padding:10px 14px;font-size:13.5px;line-height:1.75;border-radius:16px;word-break:break-word;white-space:pre-wrap}
+.msg-row.user .msg-bubble{background:var(--dark);color:#fff;border-radius:16px 16px 4px 16px}
+.msg-row.ai .msg-bubble{background:var(--light);color:var(--dark);border:1px solid var(--border2);border-radius:16px 16px 16px 4px}
+.ai-name-tag{font-size:10px;font-weight:600;color:#94a3b8;margin-bottom:3px}
+.typing{display:flex;gap:4px;padding:11px 14px;background:var(--light);border:1px solid var(--border2);border-radius:16px 16px 16px 4px;align-self:flex-start}
+.dot{width:6px;height:6px;border-radius:50%;background:#94a3b8;animation:bop 1.2s infinite}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes bop{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+
+/* Limit popup */
+.limit-popup{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:500;display:flex;align-items:flex-end;justify-content:center}
+.limit-sheet{background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 32px;width:100%;max-width:480px;text-align:center}
+.limit-sheet-icon{font-size:44px;margin-bottom:12px}
+.limit-sheet-title{font-size:20px;font-weight:800;margin-bottom:6px}
+.limit-sheet-sub{font-size:13px;color:var(--gray);line-height:1.6;margin-bottom:20px}
+.plan-stack{display:flex;flex-direction:column;gap:9px;margin-bottom:16px}
+.plan-row{border-radius:13px;padding:13px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:all 0.15s;border:none;width:100%;font-family:inherit}
+.plan-row.p1{background:var(--light);border:1.5px solid var(--border);color:var(--dark)}
+.plan-row.p2{background:var(--blue-l);border:2px solid var(--blue);color:var(--dark)}
+.plan-row.p3{background:var(--dark);color:#fff}
+.pl-price{font-size:16px;font-weight:800;text-align:left}
+.pl-name{font-size:10px;opacity:0.6;margin-top:1px;text-align:left}
+.pl-feats{font-size:10px;opacity:0.65;text-align:right;line-height:1.6}
+.pop-tag{background:var(--blue);color:#fff;font-size:8px;padding:1px 5px;border-radius:3px;font-weight:700;margin-left:4px}
+.limit-later{background:none;border:none;color:var(--gray);font-size:13px;cursor:pointer;font-family:inherit;padding:8px}
+
+/* Chat input */
+.chat-input-area{padding:10px 14px 14px;border-top:1px solid var(--border2);background:#fff;flex-shrink:0}
+.chip-row{display:flex;gap:5px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none}
+.chip-row::-webkit-scrollbar{display:none}
+.chip{background:var(--light);border:1px solid var(--border);border-radius:20px;padding:5px 11px;font-size:11px;font-weight:600;color:var(--gray);cursor:pointer;white-space:nowrap;flex-shrink:0;font-family:inherit}
+.chip:active{background:var(--blue-l);border-color:var(--blue-b);color:var(--blue)}
+.input-row{display:flex;gap:8px;align-items:flex-end}
+.chat-textarea{flex:1;background:var(--light);border:1.5px solid var(--border);border-radius:12px;padding:9px 13px;color:var(--dark);font-size:14px;resize:none;outline:none;font-family:inherit;line-height:1.5;max-height:100px}
+.chat-textarea:focus{border-color:var(--blue);background:#fff}
+.send-btn{background:var(--dark);border:none;border-radius:12px;width:42px;height:42px;color:#fff;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.send-btn:disabled{background:var(--border);cursor:not-allowed}
+
+/* ═══════════════ SCREENS ═══════════════ */
+.screen{flex:1;overflow-y:auto;padding:16px}
+.screen::-webkit-scrollbar{width:3px}
+.screen-title{font-size:18px;font-weight:800;margin-bottom:4px}
+.screen-sub{font-size:12px;color:var(--gray);margin-bottom:16px}
+.usage-bar{background:var(--blue-l);border:1px solid var(--blue-b);border-radius:10px;padding:9px 13px;margin-bottom:14px;font-size:12px;color:var(--blue);font-weight:600;display:flex;align-items:center;justify-content:space-between}
+.usage-bar.empty{background:#fef2f2;border-color:#fecaca;color:var(--red)}
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px}
+.form-select{width:100%;background:var(--light);border:1px solid var(--border);border-radius:10px;padding:10px 12px;color:var(--dark);font-size:14px;outline:none;font-family:inherit}
+.form-select:focus{border-color:var(--blue)}
+.pill-group{display:flex;gap:6px;flex-wrap:wrap}
+.pill{padding:7px 13px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--light);color:var(--gray);font-family:inherit}
+.pill.on{background:var(--dark);border-color:var(--dark);color:#fff}
+.pill.yr{padding:6px 10px;font-size:11px}
+.action-btn{width:100%;background:var(--dark);border:none;border-radius:12px;padding:13px;color:#fff;font-weight:700;font-size:15px;cursor:pointer;font-family:inherit;margin-top:4px}
+.action-btn:disabled{background:var(--border);color:#94a3b8;cursor:not-allowed}
+.err-box{background:#fef2f2;border:1px solid #fecaca;border-radius:9px;padding:10px 13px;color:var(--red);font-size:13px;margin-bottom:10px}
+
+/* Loading */
+.loading{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;gap:12px;text-align:center}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--dark);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-t{font-size:15px;font-weight:700}
+.loading-s{font-size:12px;color:#94a3b8}
+
+/* MCQ */
+.mcq-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.mcq-info{font-size:12px;font-weight:600;color:var(--gray)}
+.back-link{background:var(--light);border:1px solid var(--border);border-radius:8px;padding:5px 10px;color:var(--gray);font-size:11px;cursor:pointer;font-family:inherit}
+.mcq-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px}
+.mcq-n{font-size:10px;color:#94a3b8;font-weight:600;margin-bottom:5px}
+.mcq-q{font-size:13.5px;font-weight:500;line-height:1.65;margin-bottom:10px}
+.opt{width:100%;border-radius:9px;padding:9px 13px;font-size:13px;text-align:left;cursor:pointer;margin-bottom:5px;font-family:inherit;display:flex;align-items:center;gap:8px}
+.opt.u{background:var(--light);border:1px solid var(--border);color:#374151}
+.opt.s{background:var(--dark);border:none;color:#fff}
+.opt-k{font-weight:800;min-width:16px;font-size:12px}
+.submit-btn{width:100%;border:none;border-radius:12px;padding:13px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;margin-top:4px}
+.submit-btn.r{background:var(--dark);color:#fff}
+.submit-btn.n{background:var(--border);color:#94a3b8;cursor:not-allowed}
+
+/* Score */
+.score-hdr{text-align:center;padding:18px 0 14px;border-bottom:1px solid var(--border2);margin-bottom:14px}
+.score-em{font-size:48px}
+.score-n{font-size:36px;font-weight:900;margin-top:6px}
+.score-p{font-size:14px;color:var(--gray)}
+.result-card{border-radius:10px;padding:11px 13px;margin-bottom:8px;border:1px solid}
+.result-card.ok{background:#f0fdf4;border-color:#bbf7d0}
+.result-card.ng{background:#fef2f2;border-color:#fecaca}
+.result-q{font-size:12px;color:var(--gray);margin-bottom:3px}
+.result-a{font-size:13px;font-weight:600}
+.result-a.ok{color:var(--green)}.result-a.ng{color:var(--red)}
+.result-c{font-size:13px;color:var(--green);margin-top:2px}
+.result-e{font-size:11px;color:#94a3b8;margin-top:3px}
+.retry-btn{width:100%;background:var(--dark);border:none;border-radius:12px;padding:12px;color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;margin-top:8px}
+
+/* PYQ */
+.pyq-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px}
+.pyq-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.yr-tag{background:var(--dark);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px}
+.marks-tag{color:#94a3b8;font-size:11px}
+.rep-tag{background:#fef3c7;color:var(--yellow);font-size:9px;font-weight:700;padding:2px 5px;border-radius:4px;margin-left:4px}
+.pyq-q{font-size:13.5px;line-height:1.65;margin-bottom:10px}
+.show-ans-btn{width:100%;background:var(--light);border:1px solid var(--border);border-radius:9px;padding:8px;color:#374151;font-weight:600;font-size:13px;cursor:pointer;font-family:inherit}
+.ans-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:9px;padding:10px;color:#166534;font-size:13px;line-height:1.65;margin-bottom:5px}
+.tip-box{font-size:11px;color:#94a3b8}
+
+/* Timer */
+.timer-bar{display:flex;justify-content:space-between;align-items:center;background:var(--light);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:14px}
+.timer-v{font-size:20px;font-weight:900;font-variant-numeric:tabular-nums}
+.timer-l{font-size:10px;color:#94a3b8;margin-top:1px}
+
+/* Analysis */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:18px}
+.stat-card{background:var(--light);border:1px solid var(--border2);border-radius:12px;padding:14px;text-align:center}
+.stat-icon{font-size:20px}
+.stat-val{font-size:22px;font-weight:800;margin-top:4px;line-height:1}
+.stat-lbl{font-size:10px;color:#94a3b8;margin-top:3px}
+.area-sec-title{font-size:11px;font-weight:700;letter-spacing:0.5px;margin:14px 0 8px}
+.area-sec-title.w{color:var(--red)}.area-sec-title.s{color:var(--green)}
+.area-row{border-radius:9px;padding:10px 13px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.area-row.w{background:#fef2f2;border:1px solid #fecaca}
+.area-row.s{background:#f0fdf4;border:1px solid #bbf7d0}
+.area-b{font-size:11px;font-weight:700;padding:2px 7px;border-radius:5px}
+.area-b.w{background:#fee2e2;color:var(--red)}.area-b.s{background:#dcfce7;color:var(--green)}
+
+/* Predictor */
+.pred-intro{background:linear-gradient(135deg,var(--blue-l),#e0e7ff);border:1px solid var(--blue-b);border-radius:12px;padding:14px;margin-bottom:16px}
+.pred-result{background:var(--light);border:1px solid var(--border);border-radius:12px;padding:14px;margin-top:14px;font-size:13.5px;line-height:1.8}
+
+/* Premium lock */
+.prem-lock{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 20px;text-align:center}
+.lock-emoji{font-size:44px;margin-bottom:12px}
+.lock-title{font-size:18px;font-weight:800;margin-bottom:6px}
+.lock-sub{font-size:13px;color:var(--gray);margin-bottom:22px;line-height:1.6}
+
+/* Settings */
+.settings-section-title{font-size:11px;font-weight:700;color:#94a3b8;letter-spacing:1.5px;text-transform:uppercase;margin:16px 0 8px}
+.settings-list{display:flex;flex-direction:column;gap:1px;background:var(--border2);border-radius:12px;overflow:hidden;margin-bottom:4px}
+.settings-item{background:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center}
+.si-label{font-size:14px;font-weight:500}
+.si-val{font-size:12px;color:var(--gray)}
+
+/* Login screen */
+.login-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;text-align:center;background:#fff}
+.login-logo{margin-bottom:16px}
+.login-title{font-size:22px;font-weight:800;margin-bottom:8px}
+.login-sub{font-size:14px;color:var(--gray);margin-bottom:32px;line-height:1.6}
+.google-btn{display:flex;align-items:center;gap:12px;background:#fff;border:1.5px solid var(--border);border-radius:12px;padding:14px 24px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--dark);box-shadow:0 1px 3px rgba(0,0,0,0.1);width:100%;justify-content:center}
+.login-skip{margin-top:16px;background:none;border:none;color:var(--gray);font-size:13px;cursor:pointer;font-family:inherit;text-decoration:underline}
+</style>
+</head>
+<body>
+<div id="app"></div>
+  
+<script>
+// ╔═══════════════════════════════════╗
+// ║  CONFIG — APNI KEYS YAHAN DAALO   ║
+// ╚═══════════════════════════════════╝
+const GEMINI_KEY = "AIzaSyDZm2XpPDdoS_efrx6vBjZ0AcDwInudUds";
+const RAZORPAY_KEY = "rzp_live_Sf2jZgeH4JfE8h";
+const SUPABASE_URL = "https://btbejchwqqtijimhvfax.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0YmVqY2h3cXF0aWppbWh2ZmF4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4OTY5NDgsImV4cCI6MjA5MTQ3Mjk0OH0.tzKjbRSkYy5bzAFjCcAtq40_3FRpyUfrNqFjZvCIvko";
+
+// ═══════════
+// SUPABASE
+// ═══════════
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+// ═══════════
+// DATA
+// ═══════════
+const GEMINI_MODEL = "gemini-2.0-flash";
+const YEARS = [2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025];
+const CHAPTERS = {
+  10:["Chemical Reactions & Equations","Acids, Bases & Salts","Metals & Non-Metals","Carbon & its Compounds","Periodic Classification","Life Processes","Control & Coordination","Reproduction","Heredity & Evolution","Light – Reflection & Refraction","Human Eye","Electricity","Magnetic Effects","Sources of Energy","Our Environment"],
+  11:["Physical World","Kinematics","Laws of Motion","Work Energy & Power","Gravitation","Thermodynamics","Kinetic Theory","Oscillations & Waves","Structure of Atom","Chemical Bonding","States of Matter","Equilibrium","Redox Reactions","s-Block Elements","p-Block Elements","Organic Chemistry","Hydrocarbons","Cell Biology","Biomolecules","Plant Kingdom","Animal Kingdom"],
+  12:["Electric Charges & Fields","Current Electricity","Moving Charges & Magnetism","Electromagnetic Induction","Alternating Current","Wave Optics","Dual Nature of Radiation","Atoms & Nuclei","Semiconductor Electronics","Solid State","Solutions","Electrochemistry","Chemical Kinetics","Surface Chemistry","Coordination Compounds","Haloalkanes","Alcohols Phenols Ethers","Aldehydes & Ketones","Amines","Biomolecules","Genetics & Evolution","Human Health & Disease","Biotechnology","Ecosystem"]
+};
+const SAMPLES = {
+  10:{hi:["Photosynthesis kya hai?","Ohm ka niyam samjhao","Acid aur Base mein fark?"],en:["What is Photosynthesis?","Explain Ohm's Law","Difference between Acid and Base?"]},
+  11:{hi:["Newton ke teen niyam batao","Boyle's law samjhao","Aufbau principle kya hai?"],en:["Explain Newton's 3 Laws","What is Boyle's Law?","What is Aufbau Principle?"]},
+  12:{hi:["Faraday ka niyam batao","Half life kya hoti hai?","Electrochemistry samjhao"],en:["Explain Faraday's Law","What is Half Life?","Explain Electrochemistry"]}
+};
+const CHIPS = {
+  hi:["📝 Short mein","🔢 Formula dikhao","🧮 Numerical karo","📖 Detail mein","⚡ Example do","🔑 Key points"],
+  en:["📝 Brief answer","🔢 Show formula","🧮 Solve numerical","📖 Explain fully","⚡ Give example","🔑 Key points"]
+};
+const FREE_LIMITS = {chat:10, mcq:3, pyq:3, test:2, predict:2};
+const PLANS = {
+  49:{name:"Starter",features:"Unlimited Chat + MCQ"},
+  99:{name:"Popular ⭐",features:"+ PYQ + Test + Predictor"},
+  149:{name:"Pro",features:"Sab kuch + Priority AI"}
+};
+
+// ═══════════
+// STATE
+// ═══════════
+let S = {
+  screen:"home",
+  board:null, medium:null, cls:null, lang:"hi",
+  tab:"askAI", menuOpen:false,
+  // Auth
+  user:null, userProfile:null,
+  // Chat
+  msgs:[], question:"", chatLoading:false,
+  showLimitPopup:false,
+  // MCQ
+  mcqCh:"", mcqCnt:20, mcqs:[], mcqLoading:false, mcqAns:{}, mcqScore:null, mcqErr:"",
+  // PYQ
+  pyqCh:"", pyqYrs:[], pyqs:[], pyqLoading:false, pyqRev:{}, pyqErr:"",
+  // Test
+  testCh:"", testCnt:20, testQs:[], testLoading:false, testRunning:false,
+  testAns:{}, testScore:null, testTimer:0, testIv:null,
+  // Analysis
+  weakMap:{}, strongMap:{}, totalAsked:0, totalMCQ:0, totalCorrect:0,
+  // Predictor
+  predCh:"", predLoading:false, prediction:"", predErr:"",
+  // Practice sub-tab
+  practiceTab:"mcq",
+};
+
+const set = p => { S={...S,...p}; render(); };
+const tx = () => TX[S.lang];
+const ch = () => S.cls ? CHAPTERS[S.cls] : [];
+const isPremium = () => S.userProfile?.is_premium || false;
+const getUsage = feat => S.userProfile?.[`usage_${feat}`] || 0;
+const canUse = feat => isPremium() || getUsage(feat) < FREE_LIMITS[feat];
+const freeLeft = feat => Math.max(0, FREE_LIMITS[feat] - getUsage(feat));
+  
+// ═══════════════
+// TRANSLATIONS
+// ═══════════════
+const TX = {
+  hi:{
+    chip:"✨ Free mein shuru karein",
+    h1_1:"Board Exam mein",h1_2:"Top Karo",h1_3:"AI ke saath",
+    sub:"NCERT-focused AI — MCQ, PYQ, Test, Predictor sab ek jagah.",
+    cta:"🚀 Free Study Shuru Karein",freeNote:"Free mein start karein",
+    selectBoard:"Board Chuniye",featTitle:"Kya milega?",howTitle:"Kaise kaam karta hai?",
+    testiTitle:"Students kya bol rahe hain",pricingTitle:"Plans",
+    selMedium:"Medium Chuniye",selClass:"Class Chuniye",back:"← Wapas",
+    loginTitle:"BoardAI mein Welcome!",loginSub:"Apna progress save karne ke liye login karein",
+    googleLogin:"Google se Login karein",skip:"Abhi nahi, baad mein",
+    askAI:"Ask AI",practice:"Practice",analysis:"Analysis",predictor:"Predictor",settings:"Settings",home:"Home",
+    welcomeTitle:"Koi bhi sawaal poochho",welcomeSub:"NCERT professor level AI",
+    placeholder:"Science sawaal yahan likhiye...",
+    limitTitle:"Aaj ki limit ho gayi! 🔒",
+    limitSub:"Premium lo aur unlimited padhai karo",
+    upgrade:"⭐ Upgrade",later:"Kal aaunga",
+    chapterLbl:"Chapter",countLbl:"MCQ sankhya",yearLbl:"Saal chuniye",
+    generateMCQ:"⚡ MCQ Generate Karein",fetchPYQ:"🔍 PYQ Dhundhein",
+    startTest:"⏱ Test Shuru Karein",timeLeft:"Waqt bacha",testDone:"✓ Submit",
+    analysisTitle:"Performance Analysis",analysisSub:"Tumhara study data",
+    noData:"MCQ solve karo — yahan analysis aayegi!",
+    weakA:"📉 Kamzor Topics",strongA:"📈 Mazboot Topics",
+    sAsked:"Sawaal",sMCQ:"MCQ",sCorrect:"Sahi",sAcc:"Accuracy",
+    predictTitle:"Exam Predictor",predictSub:"AI batayega is saal kya aa sakta hai",
+    predictBtn:"🔮 Predict Karein",
+    settingsTitle:"Settings",
+    submit:"✓ Submit",retry:"🔄 Dobara",showAns:"👁 Jawab",back2:"← Wapas",
+    generating:"Generate ho raha hai...",searching:"Khoj raha hai...",
+    serverErr:"Error aaya. Dobara try karein.",
+    mcqErr:"MCQ nahi bana.",pyqErr:"PYQ nahi mila.",
+    repeated:"Repeated",imp:"⭐ Zaroori",
+    analysisLock:"Analysis sirf Premium mein",analysisLockSub:"MCQ aur Test ke baad analysis dekhein",
+    freeLeft:"free bacha",freeUsed:"Free limit khatam",
+    planTitle:"Plan chuniye",
+    logout:"Logout",
+  },
+  en:{
+    chip:"✨ Start for free",
+    h1_1:"Top Your",h1_2:"Board Exam",h1_3:"with AI",
+    sub:"NCERT-focused AI — MCQ, PYQ, Test, Predictor all in one.",
+    cta:"🚀 Start Free Study",freeNote:"Start free today",
+    selectBoard:"Select Your Board",featTitle:"What's inside?",howTitle:"How it works?",
+    testiTitle:"What students say",pricingTitle:"Plans",
+    selMedium:"Select Medium",selClass:"Select Class",back:"← Back",
+    loginTitle:"Welcome to BoardAI!",loginSub:"Login to save your progress",
+    googleLogin:"Login with Google",skip:"Skip for now",
+    askAI:"Ask AI",practice:"Practice",analysis:"Analysis",predictor:"Predictor",settings:"Settings",home:"Home",
+    welcomeTitle:"Ask anything",welcomeSub:"NCERT professor level AI",
+    placeholder:"Type your Science question...",
+    limitTitle:"Daily limit reached! 🔒",
+    limitSub:"Go Premium for unlimited study",
+    upgrade:"⭐ Upgrade",later:"Come back tomorrow",
+    chapterLbl:"Chapter",countLbl:"Number of MCQs",yearLbl:"Select years",
+    generateMCQ:"⚡ Generate MCQ",fetchPYQ:"🔍 Find PYQ",
+    startTest:"⏱ Start Test",timeLeft:"Time Left",testDone:"✓ Submit",
+    analysisTitle:"Performance Analysis",analysisSub:"Your study data",
+    noData:"Solve MCQs — analysis will appear here!",
+    weakA:"📉 Weak Areas",strongA:"📈 Strong Areas",
+    sAsked:"Asked",sMCQ:"MCQ",sCorrect:"Correct",sAcc:"Accuracy",
+    predictTitle:"Exam Predictor",predictSub:"AI predicts what's coming this year",
+    predictBtn:"🔮 Run Predictor",
+    settingsTitle:"Settings",
+    submit:"✓ Submit",retry:"🔄 Try Again",showAns:"👁 Show Answer",back2:"← Back",
+    generating:"Generating...",searching:"Searching...",
+    serverErr:"Error occurred. Try again.",
+    mcqErr:"Could not generate MCQ.",pyqErr:"Could not find PYQ.",
+    repeated:"Repeated",imp:"⭐ Important",
+    analysisLock:"Analysis is Premium only",analysisLockSub:"View analysis after solving MCQs and Tests",
+    freeLeft:"free left",freeUsed:"Free limit used",
+    planTitle:"Choose a plan",
+    logout:"Logout",
+  }
+};
+
+// ═══════════
+// SUPABASE AUTH
+// ═══════════
+async function initAuth(){
+  const { data: { session } } = await sb.auth.getSession();
+  if(session?.user){
+    S.user = session.user;
+    await loadProfile(session.user);
+  }
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if(session?.user){
+      S.user = session.user;
+      await loadProfile(session.user);
+    } else {
+      S.user = null;
+      S.userProfile = null;
+    }
+    render();
+  });
+}
+
+async function loadProfile(user){
+  let { data, error } = await sb.from('user_profiles').select('*').eq('id', user.id).single();
+  if(error || !data){
+    // Create profile
+    const today = new Date().toISOString().split('T')[0];
+    const { data: newProfile } = await sb.from('user_profiles').insert({
+      id: user.id,
+      email: user.email,
+      is_premium: false,
+      plan: 'free',
+      usage_chat: 0, usage_mcq: 0, usage_pyq: 0, usage_test: 0, usage_predict: 0,
+      reset_date: today
+    }).select().single();
+    S.userProfile = newProfile;
+  } else {
+    // Check daily reset
+    const today = new Date().toISOString().split('T')[0];
+    if(data.reset_date !== today){
+      await sb.from('user_profiles').update({
+        usage_chat: 0, usage_mcq: 0, usage_pyq: 0, usage_test: 0, usage_predict: 0,
+        reset_date: today
+      }).eq('id', user.id);
+      data.usage_chat=0; data.usage_mcq=0; data.usage_pyq=0; data.usage_test=0; data.usage_predict=0;
+    }
+    S.userProfile = data;
+  }
+}
+
+async function googleLogin(){
+  await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.href }
+  });
+}
+
+async function logout(){
+  await sb.auth.signOut();
+  S.user = null; S.userProfile = null;
+  set({screen:'home', menuOpen:false});
+}
+
+async function incrementUsage(feat){
+  const key = `usage_${feat}`;
+  const newVal = (S.userProfile?.[key] || 0) + 1;
+  if(S.userProfile){
+    S.userProfile[key] = newVal;
+    await sb.from('user_profiles').update({[key]: newVal}).eq('id', S.user.id);
+  } else {
+    // Guest — track in memory only
+    S[`guest_${feat}`] = (S[`guest_${feat}`] || 0) + 1;
+  }
+}
+
+function guestUsage(feat){
+  return S[`guest_${feat}`] || 0;
+}
+
+function canUseGuest(feat){
+  return guestUsage(feat) < FREE_LIMITS[feat];
+}
+
+function checkCan(feat){
+  if(S.user) return canUse(feat);
+  return canUseGuest(feat);
+}
+
+// ═══════════
+// GEMINI
+// ═══════════
+async function gemini(prompt, useWeb=false){
+  const url=`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
+  const body={contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.7,maxOutputTokens:2048}};
+  if(useWeb) body.tools=[{google_search:{}}];
+  const res=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  const data=await res.json();
+  if(data.error) throw new Error(data.error.message);
+  return data?.candidates?.[0]?.content?.parts?.map(p=>p.text||"").join("")||"";
+}
+async function geminiJSON(prompt, useWeb=false){
+  const t=await gemini(prompt,useWeb);
+  const m=t.match(/\{[\s\S]*\}/);
+  if(!m) throw new Error("no json");
+  return JSON.parse(m[0]);
+}
+
+// ═══════════
+// RAZORPAY
+// ═══════════
+function openPayment(amount){
+  const options = {
+    key: RAZORPAY_KEY,
+    amount: amount * 100,
+    currency: "INR",
+    name: "BoardAI",
+    description: `${PLANS[amount].name} Plan`,
+    handler: async function(response){
+      // Payment success
+      if(S.user){
+        const expiry = new Date();
+        expiry.setMonth(expiry.getMonth() + 1);
+        await sb.from('user_profiles').update({
+          is_premium: true,
+          plan: amount.toString(),
+          plan_expiry: expiry.toISOString()
+        }).eq('id', S.user.id);
+        S.userProfile.is_premium = true;
+        S.userProfile.plan = amount.toString();
+        // Save payment record
+        await sb.from('payments').insert({
+          user_id: S.user.id,
+          amount: amount,
+          status: 'success',
+          razorpay_id: response.razorpay_payment_id
+        });
+      }
+      set({showLimitPopup:false});
+      alert(S.lang==="hi"?"Payment successful! Premium active ho gaya! 🎉":"Payment successful! Premium activated! 🎉");
+    },
+    prefill:{
+      email: S.user?.email || "",
+    },
+    theme:{ color:"#0f172a" }
+  };
+  const rzp = new Razorpay(options);
+  rzp.open();
+}
+
+// ═══════════
+// ACTIONS
+// ═══════════
+function goApp(board, medium, cls){
+  const med = medium || (board==="cbse"?"en":"hi");
+  set({
+    screen:"app", board, medium:med, cls, lang:med,
+    tab:"askAI", msgs:[], menuOpen:false,
+    mcqCh:CHAPTERS[cls][0], pyqCh:CHAPTERS[cls][0],
+    testCh:CHAPTERS[cls][0], predCh:CHAPTERS[cls][0],
+    pyqYrs:[], weakMap:{}, strongMap:{},
+    totalAsked:0, totalMCQ:0, totalCorrect:0
+  });
+}
+
+function handleBoard(b){
+  if(b==="cbse") set({board:"cbse",screen:"classSelect",medium:"en"});
+  else set({board:"bihar",screen:"medium"});
+}
+
+async function sendChat(){
+  const q=S.question.trim();
+  if(!q||S.chatLoading) return;
+  if(!checkCan("chat")){ set({showLimitPopup:true}); return; }
+
+  const msgs=[...S.msgs,{r:"user",t:q}];
+  set({msgs,question:"",chatLoading:true,totalAsked:S.totalAsked+1});
+  await incrementUsage("chat");
+
+  try{
+    const isHi=S.lang==="hi";
+    const p=isHi
+      ?`Tum BoardAI ho — ek world-class NCERT, Bihar Board, CBSE, NEET aur JEE ke sabse mahaan professor. Class ${S.cls} Science ke deepest expert. Apne vast knowledge se seedha jawab do.
+
+Style:
+- Seedha point pe aao
+- DEFAULT: 3-5 lines, simple aur clear
+- Detail sirf jab user mange
+- Formulas correctly likho
+- Numericals step-by-step
+- Science ke alawa: "Main sirf Science ke sawaalon ka jawab deta hun."
+- End mein: 💡 Key point: [ek line]
+
+Sawaal: ${q}`
+      :`You are BoardAI — world's greatest NCERT, Bihar Board, CBSE, NEET and JEE professor for Class ${S.cls}. Answer from deep knowledge.
+
+Style:
+- Get straight to the point
+- DEFAULT: 3-5 lines, clear and simple
+- Give detail ONLY when user asks
+- Write formulas correctly
+- Solve numericals step by step
+- For non-Science: "I only answer Science questions."
+- End with: 💡 Key point: [one line]
+
+Question: ${q}`;
+    const text=await gemini(p,false);
+    set({msgs:[...msgs,{r:"ai",t:text}],chatLoading:false});
+  }catch(e){
+    set({msgs:[...msgs,{r:"ai",t:tx().serverErr}],chatLoading:false});
+  }
+}
+
+function appendChip(c){
+  const clean=c.replace(/[📝🔢🧮📖⚡🔑]/g,"").trim();
+  set({question:S.question+(S.question?" ":"")+clean});
+}
+
+async function genMCQ(){
+  if(!S.mcqCh||!checkCan("mcq")){
+    if(!checkCan("mcq")) set({showLimitPopup:true});
+    return;
+  }
+  set({mcqs:[],mcqAns:{},mcqScore:null,mcqErr:"",mcqLoading:true});
+  await incrementUsage("mcq");
+  try{
+    const lang=S.lang==="hi"?"Hindi":"English";
+    const p=`You are world's best Bihar Board/CBSE Class ${S.cls} NCERT Science MCQ expert.
+Generate exactly ${S.mcqCnt} MCQ questions on "${S.mcqCh}" from NCERT Class ${S.cls}. No web search.
+Mark important questions. Explanations in ${lang}.
+
+Return ONLY valid JSON:
+{"mcqs":[{"q":"question","a":"A","b":"B","c":"C","d":"D","ans":"a","exp":"explanation","important":false}]}`;
+    const data=await geminiJSON(p,false);
+    if(!data.mcqs?.length) throw new Error("empty");
+    set({mcqs:data.mcqs,mcqLoading:false});
+  }catch(e){set({mcqErr:tx().mcqErr,mcqLoading:false});}
+}
+
+function selOpt(i,o){set({mcqAns:{...S.mcqAns,[i]:o}});}
+
+function submitMCQ(){
+  let c=0; S.mcqs.forEach((m,i)=>{if(S.mcqAns[i]===m.ans)c++;});
+  const r=c/S.mcqs.length, ch=S.mcqCh;
+  set({
+    mcqScore:{c,total:S.mcqs.length},
+    totalMCQ:S.totalMCQ+S.mcqs.length,
+    totalCorrect:S.totalCorrect+c,
+    strongMap:r>=0.6?{...S.strongMap,[ch]:(S.strongMap[ch]||0)+1}:S.strongMap,
+    weakMap:r<0.6?{...S.weakMap,[ch]:(S.weakMap[ch]||0)+1}:S.weakMap
+  });
+}
+
+async function fetchPYQ(){
+  if(!S.pyqCh||!S.pyqYrs.length||!checkCan("pyq")){
+    if(!checkCan("pyq")) set({showLimitPopup:true});
+    return;
+  }
+  set({pyqs:[],pyqRev:{},pyqErr:"",pyqLoading:true});
+  await incrementUsage("pyq");
+  try{
+    const lang=S.lang==="hi"?"Hindi":"English";
+    const board=S.board==="bihar"?"Bihar Board (BSEB)":"CBSE";
+    const p=`Search web for REAL previous year questions from ${board} Class ${S.cls} Science for "${S.pyqCh}" from years: ${S.pyqYrs.join(", ")}.
+Find actual exam questions. Mark repeated questions. Answers in ${lang}.
+
+Return ONLY valid JSON:
+{"pyqs":[{"year":2023,"q":"exact question","marks":2,"ans":"complete answer","tip":"exam tip","repeated":false}]}`;
+    const data=await geminiJSON(p,true);
+    if(!data.pyqs?.length) throw new Error("empty");
+    set({pyqs:data.pyqs,pyqLoading:false});
+  }catch(e){set({pyqErr:tx().pyqErr,pyqLoading:false});}
+}
+
+function toggleYr(y){
+  const yrs=S.pyqYrs.includes(y)?S.pyqYrs.filter(x=>x!==y):[...S.pyqYrs,y];
+  set({pyqYrs:yrs});
+}
+function revPYQ(i){set({pyqRev:{...S.pyqRev,[i]:true}});}
+
+async function startTest(){
+  if(!S.testCh||!checkCan("test")){
+    if(!checkCan("test")) set({showLimitPopup:true});
+    return;
+  }
+  set({testQs:[],testAns:{},testScore:null,testLoading:true,testRunning:false});
+  await incrementUsage("test");
+  try{
+    const lang=S.lang==="hi"?"Hindi":"English";
+    const p=`You are Bihar Board/CBSE Class ${S.cls} NCERT Science expert.
+Generate ${S.testCnt} MCQ questions on "${S.testCh}". Explanations in ${lang}.
+Return ONLY JSON:
+{"mcqs":[{"q":"question","a":"A","b":"B","c":"C","d":"D","ans":"a","exp":"explanation","important":false}]}`;
+    const data=await geminiJSON(p,false);
+    if(!data.mcqs?.length) throw new Error("empty");
+    const secs=S.testCnt*90;
+    if(S.testIv) clearInterval(S.testIv);
+    const iv=setInterval(()=>{
+      if(S.testTimer<=1){clearInterval(iv);submitTest();}
+      else set({testTimer:S.testTimer-1});
+    },1000);
+    set({testQs:data.mcqs,testLoading:false,testRunning:true,testTimer:secs,testIv:iv});
+  }catch(e){set({testLoading:false});}
+}
+
+function selTestOpt(i,o){set({testAns:{...S.testAns,[i]:o}});}
+
+function submitTest(){
+  if(S.testIv) clearInterval(S.testIv);
+  let c=0; S.testQs.forEach((m,i)=>{if(S.testAns[i]===m.ans)c++;});
+  const r=c/S.testQs.length, ch=S.testCh;
+  set({
+    testScore:{c,total:S.testQs.length},testRunning:false,testIv:null,
+    totalMCQ:S.totalMCQ+S.testQs.length,totalCorrect:S.totalCorrect+c,
+    strongMap:r>=0.6?{...S.strongMap,[ch]:(S.strongMap[ch]||0)+1}:S.strongMap,
+    weakMap:r<0.6?{...S.weakMap,[ch]:(S.weakMap[ch]||0)+1}:S.weakMap
+  });
+}
+
+async function runPredictor(){
+  if(!checkCan("predict")){ set({showLimitPopup:true}); return; }
+  const chapter=document.getElementById("predSel")?.value||ch()[0];
+  set({predLoading:true,prediction:"",predErr:""});
+  await incrementUsage("predict");
+  try{
+    const isHi=S.lang==="hi"; const board=S.board==="bihar"?"Bihar Board":"CBSE";
+    const p=isHi
+      ?`Tum ${board} Class ${S.cls} Science ke expert exam analyst ho. "${chapter}" chapter ke liye pichle 10 saalon ka pattern analyze karo.
+
+Batao:
+1. 🔴 Most likely topics — kya zaroor aayega
+2. 🟡 Moderate probability topics
+3. 📝 Expected marks weightage
+4. 🔄 Jo topics baar baar aaye
+5. 💡 Is saal ke liye special tip`
+      :`You are expert ${board} Class ${S.cls} Science exam analyst. Analyze last 10 years pattern for "${chapter}".
+
+Tell:
+1. 🔴 Most likely topics — what will definitely come
+2. 🟡 Moderate probability topics
+3. 📝 Expected marks weightage
+4. 🔄 Topics that appeared repeatedly
+5. 💡 Special tip for this year`;
+    const text=await gemini(p,false);
+    set({prediction:text,predCh:chapter,predLoading:false});
+  }catch(e){set({predErr:tx().serverErr,predLoading:false});}
+}
+
+function setQ(q){set({question:q});}
+function toggleMenu(){set({menuOpen:!S.menuOpen});}
+function closeMenu(){set({menuOpen:false});}
+  
+// ═══════════
+// LOGO
+// ═══════════
+const LOGO=(size=32)=>`<svg width="${size}" height="${size}" viewBox="0 0 40 40" fill="none">
+  <rect width="40" height="40" rx="11" fill="#0f172a"/>
+  <path d="M20 9L7 15.5L20 22L33 15.5L20 9Z" fill="white" stroke="white" stroke-width="0.3" stroke-linejoin="round"/>
+  <path d="M12 18.5V25C12 25 15.5 28.5 20 28.5C24.5 28.5 28 25 28 25V18.5" stroke="white" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <circle cx="31.5" cy="20" r="1.8" fill="#60a5fa"/>
+  <path d="M31.5 21.8V30" stroke="#60a5fa" stroke-width="1.8" stroke-linecap="round"/>
+</svg>`;
+
+const esc=s=>(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\n/g,"<br>");
+const fmt=s=>{const m=Math.floor(s/60),sec=s%60;return`${m}:${sec.toString().padStart(2,"0")}`;};
+
+// ═══════════
+// RENDER
+// ═══════════
+function render(){
+  document.getElementById("app").innerHTML=buildHTML();
+  bindEvents();
+}
+
+function buildHTML(){
+  if(S.screen==="home") return renderHome();
+  if(S.screen==="medium") return renderMedium();
+  if(S.screen==="classSelect") return renderClassSelect();
+  if(S.screen==="login") return renderLogin();
+  return renderApp();
+}
+
+// ── HOMEPAGE ──
+function renderHome(){
+  const t=tx(); const l=S.lang;
+  const feats=[
+    {ic:"🤖",title:"AI Chat Tutor",desc:l==="hi"?"Professor level NCERT jawab":"Professor level NCERT answers",free:true,tag:l==="hi"?"10/day free":"10/day free"},
+    {ic:"📝",title:"MCQ Generator",desc:l==="hi"?"Instant chapter-wise MCQ":"Instant chapter-wise MCQ",free:true,tag:l==="hi"?"3 baar free":"3 times free"},
+    {ic:"📜",title:"PYQ Finder",desc:l==="hi"?"Real board exam questions":"Real board exam questions",free:true,tag:l==="hi"?"3 baar free":"3 times free"},
+    {ic:"🧪",title:"Test Mode",desc:l==="hi"?"Timer ke saath full test":"Full test with timer",free:true,tag:l==="hi"?"2 baar free":"2 times free"},
+    {ic:"🔮",title:"Exam Predictor",desc:l==="hi"?"Is saal kya aayega":"What's coming this year",free:false,tag:"Premium"},
+    {ic:"📊",title:"Analysis",desc:l==="hi"?"Weak/Strong topics track":"Track weak/strong topics",free:false,tag:"Premium"},
+  ];
+  const steps=l==="hi"
+    ?["Board aur Class chuniye","AI se koi bhi Science sawaal poochho","MCQ aur PYQ se practice karein","Analysis se weak points pakdo"]
+    :["Select Board and Class","Ask AI any Science question","Practice with MCQ and PYQ","Track weak areas with Analysis"];
+  return`<div class="homepage">
+    <nav class="hp-nav">
+      <div style="display:flex;align-items:center;gap:9px">${LOGO(30)}<span class="logo-text">Board<em>AI</em></span></div>
+      <div class="lang-toggle">
+        <button class="lt-btn ${l==="hi"?"on":""}" onclick="set({lang:'hi'})">हिंदी</button>
+        <button class="lt-btn ${l==="en"?"on":""}" onclick="set({lang:'en'})">English</button>
+      </div>
+    </nav>
+    <div class="hp-hero">
+      <div class="hp-chip">${t.chip}</div>
+      <h1 class="hp-h1">${t.h1_1}<br><em>${t.h1_2}</em><br>${t.h1_3}</h1>
+      <p class="hp-sub">${t.sub}</p>
+    </div>
+    <div class="hp-section" id="board-sec">
+      <div class="sec-label">${t.selectBoard}</div>
+      <div class="board-grid">
+        <div class="board-card" onclick="handleBoard('bihar')"><div class="bc-icon">🏫</div><div class="bc-name">Bihar Board</div><div class="bc-sub">BSEB • 10, 11, 12</div></div>
+        <div class="board-card" onclick="handleBoard('cbse')"><div class="bc-icon">📘</div><div class="bc-name">CBSE</div><div class="bc-sub">English • 10, 11, 12</div></div>
+      </div>
+    </div>
+    <div class="hp-section">
+      <div class="sec-label">${t.featTitle}</div>
+      <div class="feat-grid">
+        ${feats.map(f=>`<div class="feat-card"><div class="feat-ic">${f.ic}</div><div><div class="feat-title">${f.title}</div><div class="feat-desc">${f.desc}</div><span class="${f.free?"feat-tag-free":"feat-tag-pro"}">${f.tag}</span></div></div>`).join("")}
+      </div>
+    </div>
+    <div class="hp-section">
+      <div class="sec-label">${t.howTitle}</div>
+      <div class="step-list">${steps.map((s,i)=>`<div class="step-row"><div class="step-num">${i+1}</div><div class="step-txt">${s}</div></div>`).join("")}</div>
+    </div>
+    <div class="hp-section">
+      <div class="sec-label">${t.testiTitle}</div>
+      <div class="testi-grid">
+        <div class="testi-card"><div class="testi-text">${l==="hi"?'"MCQ generator ne meri preparation 2x fast kar di!"':'"MCQ generator made my prep 2x faster!"'}</div><div class="testi-auth">— Rahul Kumar, Class 10 Bihar Board</div></div>
+        <div class="testi-card"><div class="testi-text">${l==="hi"?'"PYQ mein exactly wahi question mila jo exam mein aaya!"':'"Found the exact question in PYQ that came in exam!"'}</div><div class="testi-auth">— Priya Sharma, Class 12 CBSE</div></div>
+      </div>
+    </div>
+    <div class="hp-section" style="text-align:center">
+      <div class="sec-label">${t.pricingTitle}</div>
+      <div class="price-row"><span>Free</span>→<strong>₹49</strong>→<strong>₹99</strong>→<strong>₹149</strong></div>
+      <div class="price-note">${l==="hi"?"Free se shuru, zaroori lage tab upgrade":"Start free, upgrade anytime"}</div>
+    </div>
+    <div class="hp-section">
+      <button class="hp-cta" onclick="document.getElementById('board-sec').scrollIntoView({behavior:'smooth'})">${t.cta}</button>
+      <div class="hp-free">${t.freeNote}</div>
+    </div>
+  </div>`;
+}
+
+// ── MEDIUM / CLASS ──
+function renderMedium(){
+  const t=tx();
+  return`<div class="select-page">
+    <div class="sel-back" onclick="set({screen:'home'})">← ${t.back}</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">${LOGO(36)}<span class="logo-text">Board<em>AI</em></span></div>
+    <div class="sel-label">${t.selMedium}</div>
+    <div class="sel-cards">
+      <div class="sel-card" onclick="set({medium:'hi',screen:'classSelect'})"><div class="si">🇮🇳</div><div class="sn">हिंदी</div><div class="ss">Hindi Medium</div></div>
+      <div class="sel-card" onclick="set({medium:'en',screen:'classSelect'})"><div class="si">🌐</div><div class="sn">English</div><div class="ss">English Medium</div></div>
+    </div>
+  </div>`;
+}
+
+function renderClassSelect(){
+  const t=tx(); const med=S.medium||"en";
+  return`<div class="select-page">
+    <div class="sel-back" onclick="set({screen:S.board==='cbse'?'home':'medium'})">${t.back}</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">${LOGO(36)}<span class="logo-text">Board<em>AI</em></span></div>
+    <div class="sel-label">${t.selClass}</div>
+    <div class="cls-cards">
+      ${[10,11,12].map(c=>`<div class="cls-card" onclick="goApp('${S.board}','${med}',${c})"><div class="cls-num">${c}</div><div class="cls-lbl">CLASS</div></div>`).join("")}
+    </div>
+  </div>`;
+}
+
+// ── LOGIN ──
+function renderLogin(){
+  const t=tx();
+  return`<div class="login-screen">
+    <div class="login-logo">${LOGO(56)}</div>
+    <div class="logo-text" style="font-size:24px;margin-bottom:16px">Board<em>AI</em></div>
+    <div class="login-title">${t.loginTitle}</div>
+    <div class="login-sub">${t.loginSub}</div>
+    <button class="google-btn" onclick="googleLogin()">
+      <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      ${t.googleLogin}
+    </button>
+    <button class="login-skip" onclick="set({screen:'app'})">${t.skip}</button>
+  </div>`;
+}
+
+// ── APP ──
+function renderApp(){
+  const t=tx(); const tab=S.tab;
+  const boardLbl=S.board==="bihar"?"Bihar Board":"CBSE";
+  const userName=S.user?.user_metadata?.name||S.user?.email?.split("@")[0]||"Guest";
+  const userAvatar=userName[0]?.toUpperCase()||"G";
+
+  return`
+    ${S.menuOpen?`<div class="menu-overlay show" onclick="closeMenu()"></div>`:""}
+    ${S.showLimitPopup?renderLimitPopup():""}
+    <div class="app-layout">
+      <div class="side-menu ${S.menuOpen?"open":""}">
+        <div class="sm-header">
+          <div class="sm-logo">${LOGO(28)}<span class="sm-logo-text">Board<em>AI</em></span></div>
+          <div class="sm-meta">${boardLbl} • Class ${S.cls}</div>
+          ${S.user?`<div class="sm-user">
+            <div class="sm-avatar">${userAvatar}</div>
+            <span class="sm-user-name">${userName}</span>
+            <span class="sm-plan-badge ${isPremium()?"premium":"free"}">${isPremium()?"PRO":"FREE"}</span>
+          </div>`:`<div class="sm-user" onclick="set({screen:'login',menuOpen:false})" style="cursor:pointer">
+            <div class="sm-avatar">?</div>
+            <span class="sm-user-name" style="color:#60a5fa">Login karein</span>
+          </div>`}
+        </div>
+        <div class="sm-nav">
+          <button class="sm-item ${tab==="askAI"?"active":""}" onclick="set({tab:'askAI',menuOpen:false})"><span class="sm-item-icon">🤖</span>${t.askAI}</button>
+          <button class="sm-item ${tab==="practice"?"active":""}" onclick="set({tab:'practice',menuOpen:false})"><span class="sm-item-icon">📚</span>${t.practice}</button>
+          <button class="sm-item ${tab==="analysis"?"active":""}" onclick="set({tab:'analysis',menuOpen:false})"><span class="sm-item-icon">📊</span>${t.analysis}</button>
+          <button class="sm-item ${tab==="predictor"?"active":""}" onclick="set({tab:'predictor',menuOpen:false})"><span class="sm-item-icon">🔮</span>${t.predictor}</button>
+          <div class="sm-divider"></div>
+          <button class="sm-item" onclick="set({screen:'home',menuOpen:false})"><span class="sm-item-icon">🏠</span>${t.home}</button>
+          <button class="sm-item ${tab==="settings"?"active":""}" onclick="set({tab:'settings',menuOpen:false})"><span class="sm-item-icon">⚙️</span>${t.settings}</button>
+        </div>
+        <div class="sm-footer">
+          ${!isPremium()?`<button class="sm-upgrade-btn" onclick="set({showLimitPopup:true,menuOpen:false})">⭐ Upgrade to Premium</button>`:""}
+          ${S.user?`<button class="sm-logout-btn" onclick="logout()">${t.logout}</button>`:""}
+        </div>
+      </div>
+
+      <div class="main-content">
+        <div class="topbar">
+          <div class="topbar-left">
+            <button class="menu-toggle" onclick="toggleMenu()">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+            <span class="topbar-title">${tab==="askAI"?t.askAI:tab==="practice"?t.practice:tab==="analysis"?t.analysisTitle:tab==="predictor"?t.predictTitle:t.settingsTitle}</span>
+          </div>
+          <div class="topbar-right">
+            <button class="lang-sw" onclick="set({lang:S.lang==='hi'?'en':'hi'})">${S.lang==="hi"?"EN":"हि"}</button>
+          </div>
+        </div>
+
+        ${tab==="askAI"?renderChat():""}
+        ${tab==="practice"?renderPractice():""}
+        ${tab==="analysis"?renderAnalysis():""}
+        ${tab==="predictor"?renderPredictor():""}
+        ${tab==="settings"?renderSettings():""}
+      </div>
+    </div>`;
+  }
+  
+// ── LIMIT POPUP ──
+function renderLimitPopup(){
+  const t=tx();
+  return`<div class="limit-popup" onclick="if(event.target===this)set({showLimitPopup:false})">
+    <div class="limit-sheet">
+      <div class="limit-sheet-icon">🔒</div>
+      <div class="limit-sheet-title">${t.limitTitle}</div>
+      <div class="limit-sheet-sub">${t.limitSub}</div>
+      <div class="plan-stack">
+        ${[49,99,149].map(amt=>`<button class="plan-row ${amt===49?"p1":amt===99?"p2":"p3"}" onclick="openPayment(${amt})">
+          <div><div class="pl-price">₹${amt}/month${amt===99?`<span class="pop-tag">⭐</span>`:""}</div><div class="pl-name">${PLANS[amt].name}</div></div>
+          <div class="pl-feats">${PLANS[amt].features}</div>
+        </button>`).join("")}
+      </div>
+      <button class="limit-later" onclick="set({showLimitPopup:false})">${t.later}</button>
+    </div>
+  </div>`;
+}
+
+// ── CHAT ──
+function renderChat(){
+  const t=tx(); const msgs=S.msgs;
+  return`<div class="chat-main">
+    <div class="chat-messages" id="chatArea">
+      ${msgs.length===0?`
+        <div class="welcome-state">
+          <div class="welcome-icon">${LOGO(28)}</div>
+          <div class="welcome-title">${t.welcomeTitle}</div>
+          <div class="welcome-sub">Class ${S.cls} • ${t.welcomeSub}</div>
+          <div class="sample-list">
+            ${(SAMPLES[S.cls]?.[S.lang]||[]).map(q=>`<button class="sample-btn" onclick="setQ('${q.replace(/'/g,"\\'")}')">→ ${q}</button>`).join("")}
+          </div>
+        </div>`:""}
+      ${msgs.map(m=>`
+        <div class="msg-row ${m.r}">
+          ${m.r==="ai"?`<div class="ai-name-tag">🎓 BoardAI</div>`:""}
+          <div class="msg-bubble">${esc(m.t)}</div>
+        </div>`).join("")}
+      ${S.chatLoading?`<div class="msg-row ai"><div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`:""}
+    </div>
+    <div class="chat-input-area">
+      <div class="chip-row">${(CHIPS[S.lang]||[]).map(c=>`<button class="chip" onclick="appendChip('${c.replace(/'/g,"\\'")}') ">${c}</button>`).join("")}</div>
+      <div class="input-row">
+        <textarea class="chat-textarea" id="chatInput" rows="2" placeholder="${t.placeholder}"></textarea>
+        <button class="send-btn" id="sendBtn" ${S.chatLoading||!S.question.trim()?"disabled":""} onclick="sendChat()">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M2 21L23 12 2 3v7l15 2-15 2v7z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── PRACTICE ──
+function renderPractice(){
+  const pt=S.practiceTab||"mcq";
+  return`<div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+    <div style="display:flex;border-bottom:1px solid var(--border2);flex-shrink:0;background:#fff">
+      ${[["mcq","📝 MCQ"],["pyq","📜 PYQ"],["test","🧪 Test"]].map(([id,label])=>`
+        <button onclick="set({practiceTab:'${id}'})" style="flex:1;padding:11px 4px;border:none;background:none;font-size:12px;font-weight:${pt===id?"700":"500"};color:${pt===id?"var(--dark)":"#94a3b8"};border-bottom:2px solid ${pt===id?"var(--dark)":"transparent"};cursor:pointer;font-family:inherit">${label}</button>`).join("")}
+    </div>
+    ${pt==="mcq"?renderMCQ():""}
+    ${pt==="pyq"?renderPYQ():""}
+    ${pt==="test"?renderTest():""}
+  </div>`;
+}
+
+// ── MCQ ──
+function renderMCQ(){
+  const t=tx(); const {mcqs,mcqLoading,mcqErr,mcqAns,mcqScore,mcqCh,mcqCnt}=S;
+  const left=S.user?freeLeft("mcq"):Math.max(0,FREE_LIMITS.mcq-(S.guest_mcq||0));
+  if(mcqLoading) return`<div class="loading"><div class="spinner"></div><div class="loading-t">${t.generating}</div><div class="loading-s">${mcqCnt} MCQs • ${mcqCh}</div></div>`;
+  if(mcqScore) return`<div class="screen">
+    <div class="score-hdr"><div class="score-em">${mcqScore.c/mcqScore.total>=0.6?"🏆":"📚"}</div><div class="score-n">${mcqScore.c}/${mcqScore.total}</div><div class="score-p">${Math.round((mcqScore.c/mcqScore.total)*100)}%</div></div>
+    ${mcqs.map((m,i)=>`<div class="result-card ${mcqAns[i]===m.ans?"ok":"ng"}">
+      ${m.important?`<span style="font-size:9px;color:var(--yellow);font-weight:700">${t.imp}</span>`:""}
+      <div class="result-q">Q${i+1}. ${esc(m.q)}</div>
+      <div class="result-a ${mcqAns[i]===m.ans?"ok":"ng"}">${mcqAns[i]===m.ans?"✅":"❌"} ${esc(m[mcqAns[i]]||"")}</div>
+      ${mcqAns[i]!==m.ans?`<div class="result-c">✓ ${esc(m[m.ans])}</div>`:""}
+      <div class="result-e">💡 ${esc(m.exp)}</div>
+    </div>`).join("")}
+    <button class="retry-btn" onclick="set({mcqs:[],mcqAns:{},mcqScore:null})">${t.retry}</button>
+  </div>`;
+  if(mcqs.length>0) return`<div class="screen">
+    <div class="mcq-hdr"><span class="mcq-info">${mcqs.length} MCQ • ${mcqCh}</span><button class="back-link" onclick="set({mcqs:[],mcqErr:''})">${t.back2}</button></div>
+    ${mcqs.map((m,i)=>`<div class="mcq-card">
+      <div class="mcq-n">Q ${i+1} ${m.important?`<span style="color:var(--yellow);font-size:9px">${t.imp}</span>`:""}</div>
+      <div class="mcq-q">${esc(m.q)}</div>
+      ${["a","b","c","d"].map(o=>`<button class="opt ${mcqAns[i]===o?"s":"u"}" onclick="selOpt(${i},'${o}')"><span class="opt-k">${o.toUpperCase()}.</span>${esc(m[o]||"")}</button>`).join("")}
+    </div>`).join("")}
+    <button class="submit-btn ${Object.keys(mcqAns).length<mcqs.length?"n":"r"}" onclick="submitMCQ()" ${Object.keys(mcqAns).length<mcqs.length?"disabled":""}>${t.submit} (${Object.keys(mcqAns).length}/${mcqs.length})</button>
+  </div>`;
+  return`<div class="screen">
+    ${!isPremium()?`<div class="usage-bar ${left===0?"empty":""}"><span>${left>0?`✅ ${left} ${t.freeLeft}`:`🔒 ${t.freeUsed}`}</span>${left===0?`<span onclick="set({showLimitPopup:true})" style="cursor:pointer;color:var(--blue);font-weight:700">Upgrade →</span>`:""}</div>`:""}
+    <div class="form-group"><label class="form-label">${t.chapterLbl}</label>
+    <select class="form-select" onchange="set({mcqCh:this.value})">${ch().map(c=>`<option value="${c}" ${S.mcqCh===c?"selected":""}>${c}</option>`).join("")}</select></div>
+    <div class="form-group"><label class="form-label">${t.countLbl}</label>
+    <div class="pill-group">${[20,30,40,50].map(n=>`<button class="pill ${mcqCnt===n?"on":""}" onclick="set({mcqCnt:${n}})">${n}</button>`).join("")}</div></div>
+    ${mcqErr?`<div class="err-box">${mcqErr}</div>`:""}
+    <button class="action-btn" onclick="genMCQ()">${t.generateMCQ}</button>
+  </div>`;
+}
+
+// ── PYQ ──
+function renderPYQ(){
+  const t=tx(); const {pyqs,pyqLoading,pyqErr,pyqRev,pyqYrs}=S;
+  const left=S.user?freeLeft("pyq"):Math.max(0,FREE_LIMITS.pyq-(S.guest_pyq||0));
+  return`<div class="screen">
+    ${!isPremium()?`<div class="usage-bar ${left===0?"empty":""}"><span>${left>0?`✅ ${left} ${t.freeLeft}`:`🔒 ${t.freeUsed}`}</span>${left===0?`<span onclick="set({showLimitPopup:true})" style="cursor:pointer;color:var(--blue);font-weight:700">Upgrade →</span>`:""}</div>`:""}
+    <div class="form-group"><label class="form-label">${t.chapterLbl}</label>
+    <select class="form-select" onchange="set({pyqCh:this.value})">${ch().map(c=>`<option value="${c}" ${S.pyqCh===c?"selected":""}>${c}</option>`).join("")}</select></div>
+    <div class="form-group"><label class="form-label">${t.yearLbl}</label>
+    <div class="pill-group">${YEARS.map(y=>`<button class="pill yr ${pyqYrs.includes(y)?"on":""}" onclick="toggleYr(${y})">${y}</button>`).join("")}</div></div>
+    ${pyqErr?`<div class="err-box">${pyqErr}</div>`:""}
+    <button class="action-btn" onclick="fetchPYQ()" ${!pyqYrs.length?"disabled":""}>${t.fetchPYQ}</button>
+    ${pyqLoading?`<div class="loading" style="padding:24px"><div class="spinner"></div><div class="loading-t">${t.searching}</div></div>`:""}
+    <div style="margin-top:12px">
+    ${pyqs.map((p,i)=>`<div class="pyq-card">
+      <div class="pyq-meta"><span><span class="yr-tag">${p.year}</span>${p.repeated?`<span class="rep-tag">${t.repeated}</span>`:""}</span><span class="marks-tag">${p.marks} marks</span></div>
+      <div class="pyq-q">${esc(p.q)}</div>
+      ${!pyqRev[i]?`<button class="show-ans-btn" onclick="revPYQ(${i})">${t.showAns}</button>`:`<div class="ans-box">✅ ${esc(p.ans)}</div>${p.tip?`<div class="tip-box">💡 ${esc(p.tip)}</div>`:""}`}
+    </div>`).join("")}
+    </div>
+  </div>`;
+  }
+  
+// ── TEST ──
+function renderTest(){
+  const t=tx(); const {testQs,testLoading,testRunning,testScore,testAns,testTimer,testCh,testCnt}=S;
+  const left=S.user?freeLeft("test"):Math.max(0,FREE_LIMITS.test-(S.guest_test||0));
+  if(testLoading) return`<div class="loading"><div class="spinner"></div><div class="loading-t">${t.generating}</div></div>`;
+  if(testScore) return`<div class="screen">
+    <div class="score-hdr"><div class="score-em">${testScore.c/testScore.total>=0.6?"🏆":"📚"}</div><div class="score-n">${testScore.c}/${testScore.total}</div><div class="score-p">${Math.round((testScore.c/testScore.total)*100)}%</div></div>
+    ${testQs.map((m,i)=>`<div class="result-card ${testAns[i]===m.ans?"ok":"ng"}">
+      <div class="result-q">Q${i+1}. ${esc(m.q)}</div>
+      <div class="result-a ${testAns[i]===m.ans?"ok":"ng"}">${testAns[i]===m.ans?"✅":"❌"} ${esc(m[testAns[i]]||"")}</div>
+      ${testAns[i]!==m.ans?`<div class="result-c">✓ ${esc(m[m.ans])}</div>`:""}
+      <div class="result-e">💡 ${esc(m.exp)}</div>
+    </div>`).join("")}
+    <button class="retry-btn" onclick="set({testQs:[],testAns:{},testScore:null,testRunning:false})">${t.retry}</button>
+  </div>`;
+  if(testRunning) return`<div class="screen">
+    <div class="timer-bar"><div><div class="timer-v">${fmt(testTimer)}</div><div class="timer-l">${t.timeLeft}</div></div><div style="font-size:12px;font-weight:600;color:var(--gray)">${Object.keys(testAns).length}/${testQs.length}</div></div>
+    ${testQs.map((m,i)=>`<div class="mcq-card">
+      <div class="mcq-n">Q ${i+1}</div>
+      <div class="mcq-q">${esc(m.q)}</div>
+      ${["a","b","c","d"].map(o=>`<button class="opt ${testAns[i]===o?"s":"u"}" onclick="selTestOpt(${i},'${o}')"><span class="opt-k">${o.toUpperCase()}.</span>${esc(m[o]||"")}</button>`).join("")}
+    </div>`).join("")}
+    <button class="submit-btn r" onclick="submitTest()">${t.testDone}</button>
+  </div>`;
+  return`<div class="screen">
+    ${!isPremium()?`<div class="usage-bar ${left===0?"empty":""}"><span>${left>0?`✅ ${left} ${t.freeLeft}`:`🔒 ${t.freeUsed}`}</span>${left===0?`<span onclick="set({showLimitPopup:true})" style="cursor:pointer;color:var(--blue);font-weight:700">Upgrade →</span>`:""}</div>`:""}
+    <div class="form-group"><label class="form-label">${t.chapterLbl}</label>
+    <select class="form-select" onchange="set({testCh:this.value})">${ch().map(c=>`<option value="${c}" ${S.testCh===c?"selected":""}>${c}</option>`).join("")}</select></div>
+    <div class="form-group"><label class="form-label">${t.countLbl}</label>
+    <div class="pill-group">${[10,20,30].map(n=>`<button class="pill ${testCnt===n?"on":""}" onclick="set({testCnt:${n}})">${n}</button>`).join("")}</div></div>
+    <button class="action-btn" onclick="startTest()">${t.startTest}</button>
+  </div>`;
+}
+
+// ── ANALYSIS ──
+function renderAnalysis(){
+  const t=tx(); const {weakMap,strongMap,totalAsked,totalMCQ,totalCorrect}=S;
+  if(!isPremium()) return`<div class="prem-lock">
+    <div class="lock-emoji">📊</div>
+    <div class="lock-title">${t.analysisLock}</div>
+    <div class="lock-sub">${t.analysisLockSub}</div>
+    <div class="plan-stack" style="width:100%;max-width:300px">
+      ${[49,99,149].map(amt=>`<button class="plan-row ${amt===49?"p1":amt===99?"p2":"p3"}" onclick="openPayment(${amt})">
+        <div><div class="pl-price">₹${amt}/month${amt===99?`<span class="pop-tag">⭐</span>`:""}</div><div class="pl-name">${PLANS[amt].name}</div></div>
+        <div class="pl-feats">${PLANS[amt].features}</div>
+      </button>`).join("")}
+    </div>
+  </div>`;
+  const acc=totalMCQ?Math.round((totalCorrect/totalMCQ)*100)+"%":"—";
+  const has=Object.keys(weakMap).length||Object.keys(strongMap).length;
+  return`<div class="screen">
+    <div class="screen-title">${t.analysisTitle}</div>
+    <div class="screen-sub">${t.analysisSub}</div>
+    <div class="stats-grid">
+      ${[[t.sAsked,totalAsked,"⚡"],[t.sMCQ,totalMCQ,"📝"],[t.sCorrect,totalCorrect,"✅"],[t.sAcc,acc,"🎯"]].map(([l,v,i])=>`<div class="stat-card"><div class="stat-icon">${i}</div><div class="stat-val">${v}</div><div class="stat-lbl">${l}</div></div>`).join("")}
+    </div>
+    ${!has?`<div style="text-align:center;padding:36px 20px"><div style="font-size:44px;margin-bottom:10px">📊</div><div style="color:#94a3b8;font-size:14px">${t.noData}</div></div>`:
+    `${Object.keys(weakMap).length?`<div class="area-sec-title w">${t.weakA}</div>${Object.entries(weakMap).sort((a,b)=>b[1]-a[1]).map(([c,n])=>`<div class="area-row w"><span style="font-size:13px">${c}</span><span class="area-b w">${n}×</span></div>`).join("")}`:""}
+    ${Object.keys(strongMap).length?`<div class="area-sec-title s">${t.strongA}</div>${Object.entries(strongMap).sort((a,b)=>b[1]-a[1]).map(([c,n])=>`<div class="area-row s"><span style="font-size:13px">${c}</span><span class="area-b s">${n}×</span></div>`).join("")}`:""}
+    `}
+  </div>`;
+}
+
+// ── PREDICTOR ──
+function renderPredictor(){
+  const t=tx();
+  const left=S.user?freeLeft("predict"):Math.max(0,FREE_LIMITS.predict-(S.guest_predict||0));
+  if(S.predLoading) return`<div class="loading"><div class="spinner"></div><div class="loading-t">${S.lang==="hi"?"Predict ho raha hai...":"Predicting..."}</div></div>`;
+  return`<div class="screen">
+    <div class="screen-title">${t.predictTitle}</div>
+    <div class="screen-sub">${t.predictSub}</div>
+    <div class="pred-intro">
+      <div style="font-size:14px;font-weight:700;color:var(--blue);margin-bottom:4px">🔮 AI Exam Predictor</div>
+      <div style="font-size:12px;color:#4338ca;line-height:1.5">${S.lang==="hi"?"Pichle 10 saalon ka pattern analyze karke AI predict karega":"Analyzes 10 years of patterns to predict important topics"}</div>
+    </div>
+    ${!isPremium()?`<div class="usage-bar ${left===0?"empty":""}"><span>${left>0?`✅ ${left} ${t.freeLeft}`:`🔒 ${t.freeUsed}`}</span>${left===0?`<span onclick="set({showLimitPopup:true})" style="cursor:pointer;color:var(--blue);font-weight:700">Upgrade →</span>`:""}</div>`:""}
+    <div class="form-group"><label class="form-label">${t.chapterLbl}</label>
+    <select class="form-select" id="predSel">${ch().map(c=>`<option value="${c}">${c}</option>`).join("")}</select></div>
+    ${S.predErr?`<div class="err-box">${S.predErr}</div>`:""}
+    <button class="action-btn" onclick="runPredictor()">${t.predictBtn}</button>
+    ${S.prediction?`<div class="pred-result">${esc(S.prediction)}</div>`:""}
+  </div>`;
+}
+
+// ── SETTINGS ──
+function renderSettings(){
+  const t=tx(); const l=S.lang;
+  return`<div class="screen">
+    <div class="screen-title">${t.settingsTitle}</div>
+    <div class="settings-section-title">Account</div>
+    <div class="settings-list">
+      <div class="settings-item">
+        <span class="si-label">👤 ${l==="hi"?"User":"User"}</span>
+        <span class="si-val">${S.user?.email||"Guest"}</span>
+      </div>
+      <div class="settings-item">
+        <span class="si-label">⭐ Plan</span>
+        <span class="si-val">${S.userProfile?.plan||"Free"}</span>
+      </div>
+      ${!isPremium()?`<div class="settings-item" onclick="set({showLimitPopup:true})" style="cursor:pointer">
+        <span class="si-label">🚀 ${l==="hi"?"Premium lo":"Upgrade"}</span>
+        <span class="si-val" style="color:var(--blue)">₹49/₹99/₹149 →</span>
+      </div>`:""}
+      ${!S.user?`<div class="settings-item" onclick="set({screen:'login'})" style="cursor:pointer">
+        <span class="si-label">🔑 ${l==="hi"?"Login karein":"Login"}</span>
+        <span class="si-val" style="color:var(--blue)">Google →</span>
+      </div>`:""}
+    </div>
+    <div class="settings-section-title">${l==="hi"?"Study":"Study"}</div>
+    <div class="settings-list">
+      <div class="settings-item"><span class="si-label">🏫 Board</span><span class="si-val">${S.board==="bihar"?"Bihar Board":"CBSE"}</span></div>
+      <div class="settings-item"><span class="si-label">📚 Class</span><span class="si-val">Class ${S.cls}</span></div>
+      <div class="settings-item"><span class="si-label">🌐 Medium</span><span class="si-val">${S.medium==="hi"?"Hindi":"English"}</span></div>
+      <div class="settings-item" onclick="set({screen:'home'})" style="cursor:pointer"><span class="si-label">🔄 ${l==="hi"?"Board/Class Badlo":"Change Board/Class"}</span><span class="si-val">→</span></div>
+    </div>
+    <div class="settings-section-title">${l==="hi"?"Free Usage":"Free Usage"}</div>
+    <div class="settings-list">
+      ${[["💬 Chat",S.user?getUsage("chat"):(S.guest_chat||0),FREE_LIMITS.chat],
+         ["📝 MCQ",S.user?getUsage("mcq"):(S.guest_mcq||0),FREE_LIMITS.mcq],
+         ["📜 PYQ",S.user?getUsage("pyq"):(S.guest_pyq||0),FREE_LIMITS.pyq],
+         ["🧪 Test",S.user?getUsage("test"):(S.guest_test||0),FREE_LIMITS.test],
+         ["🔮 Predictor",S.user?getUsage("predict"):(S.guest_predict||0),FREE_LIMITS.predict]
+        ].map(([label,used,max])=>`<div class="settings-item"><span class="si-label">${label}</span><span class="si-val">${used}/${max}</span></div>`).join("")}
+    </div>
+  </div>`;
+}
+
+// ═══════════
+// BIND EVENTS
+// ═══════════
+function bindEvents(){
+  const inp=document.getElementById("chatInput");
+  if(inp){
+    inp.addEventListener("input",e=>{
+      S.question=e.target.value;
+      const btn=document.getElementById("sendBtn");
+      if(btn) btn.disabled=S.chatLoading||!S.question.trim();
+    });
+    inp.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendChat();}});
+    inp.value=S.question;
+    setTimeout(()=>{const ca=document.getElementById("chatArea");if(ca)ca.scrollTop=ca.scrollHeight;},50);
+  }
+}
+
+// ═══════════
+// INIT
+// ═══════════
+initAuth().then(()=>render());
+</script>
+</body>
+</html>
 
