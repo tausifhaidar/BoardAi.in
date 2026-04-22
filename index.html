@@ -17,7 +17,7 @@ button,select,textarea{font-family:'Inter',system-ui,sans-serif}
   --light:#f8fafc;--border:#e2e8f0;--border2:#f1f5f9;
   --green:#16a34a;--red:#dc2626;--yellow:#d97706;
 }
-  
+
 /* ═══════════════ HOMEPAGE ═══════════════ */
 .homepage{min-height:100vh;background:#fff;display:flex;flex-direction:column}
 .hp-nav{padding:14px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border2)}
@@ -75,7 +75,7 @@ button,select,textarea{font-family:'Inter',system-ui,sans-serif}
 .cls-num{font-size:30px;font-weight:900}
 .cls-lbl{font-size:9px;color:#94a3b8;font-weight:700;letter-spacing:1px}
 
-  /* ═══════════════ APP LAYOUT ═══════════════ */
+/* ═══════════════ APP LAYOUT ═══════════════ */
 .app-layout{display:flex;height:100vh;background:#fff;position:relative;overflow:hidden}
 .side-menu{width:240px;height:100vh;background:var(--dark);display:flex;flex-direction:column;position:absolute;left:0;top:0;z-index:200;transform:translateX(-240px);transition:transform 0.25s cubic-bezier(.4,0,.2,1);box-shadow:4px 0 20px rgba(0,0,0,0.3)}
 .side-menu.open{transform:translateX(0)}
@@ -111,7 +111,7 @@ button,select,textarea{font-family:'Inter',system-ui,sans-serif}
 .topbar-right{display:flex;align-items:center;gap:8px}
 .lang-sw{background:var(--light);border:1px solid var(--border);border-radius:8px;padding:4px 9px;color:var(--gray);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit}
 
-  /* ═══════════════ CHAT ═══════════════ */
+/* ═══════════════ CHAT ═══════════════ */
 .chat-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
 .chat-messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:11px}
 .chat-messages::-webkit-scrollbar{width:3px}
@@ -277,12 +277,11 @@ button,select,textarea{font-family:'Inter',system-ui,sans-serif}
 </head>
 <body>
 <div id="app"></div>
-  
+
 <script>
 // ╔═══════════════════════════════════╗
 // ║  CONFIG — APNI KEYS YAHAN DAALO   ║
 // ╚═══════════════════════════════════╝
-const GEMINI_KEY = "AIzaSyDZm2XpPDdoS_efrx6vBjZ0AcDwInudUds";
 const RAZORPAY_KEY = "rzp_live_Sf2jZgeH4JfE8h";
 const SUPABASE_URL = "https://btbejchwqqtijimhvfax.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0YmVqY2h3cXF0aWppbWh2ZmF4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4OTY5NDgsImV4cCI6MjA5MTQ3Mjk0OH0.tzKjbRSkYy5bzAFjCcAtq40_3FRpyUfrNqFjZvCIvko";
@@ -314,11 +313,11 @@ const CHIPS = {
 };
 const FREE_LIMITS = {chat:10, mcq:3, pyq:3, test:2, predict:2};
 const PLANS = {
-  49:{name:"Starter",features:"Unlimited Chat + MCQ"},
-  99:{name:"Popular ⭐",features:"+ PYQ + Test + Predictor"},
-  149:{name:"Pro",features:"Sab kuch + Priority AI"}
+  49:{name:"Starter",features:"2-5X more than free"},
+  99:{name:"Popular ⭐",features:"10-20X more than free"},
+  149:{name:"Pro — Full Power",features:"Unlimited Everything • Fastest AI • Priority Access"}
 };
-
+  
 // ═══════════
 // STATE
 // ═══════════
@@ -353,7 +352,7 @@ const isPremium = () => S.userProfile?.is_premium || false;
 const getUsage = feat => S.userProfile?.[`usage_${feat}`] || 0;
 const canUse = feat => isPremium() || getUsage(feat) < FREE_LIMITS[feat];
 const freeLeft = feat => Math.max(0, FREE_LIMITS[feat] - getUsage(feat));
-  
+
 // ═══════════════
 // TRANSLATIONS
 // ═══════════════
@@ -431,7 +430,7 @@ const TX = {
     logout:"Logout",
   }
 };
-
+  
 // ═══════════
 // SUPABASE AUTH
 // ═══════════
@@ -523,21 +522,29 @@ function checkCan(feat){
 // GEMINI
 // ═══════════
 async function gemini(prompt, useWeb=false){
-  const url=`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
-  const body={contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.7,maxOutputTokens:2048}};
-  if(useWeb) body.tools=[{google_search:{}}];
-  const res=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
-  const data=await res.json();
-  if(data.error) throw new Error(data.error.message);
-  return data?.candidates?.[0]?.content?.parts?.map(p=>p.text||"").join("")||"";
+  const res = await fetch("/api/gemini", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ prompt })
+  });
+
+  const data = await res.json();
+
+  if(data.error) throw new Error(data.error);
+
+  return data?.candidates?.[0]?.content?.parts
+    ?.map(p => p.text || "")
+    .join("") || "";
 }
 async function geminiJSON(prompt, useWeb=false){
   const t=await gemini(prompt,useWeb);
   const m=t.match(/\{[\s\S]*\}/);
   if(!m) throw new Error("no json");
   return JSON.parse(m[0]);
-}
-
+  }
+  
 // ═══════════
 // RAZORPAY
 // ═══════════
@@ -747,8 +754,8 @@ function submitTest(){
     strongMap:r>=0.6?{...S.strongMap,[ch]:(S.strongMap[ch]||0)+1}:S.strongMap,
     weakMap:r<0.6?{...S.weakMap,[ch]:(S.weakMap[ch]||0)+1}:S.weakMap
   });
-}
-
+  }
+  
 async function runPredictor(){
   if(!checkCan("predict")){ set({showLimitPopup:true}); return; }
   const chapter=document.getElementById("predSel")?.value||ch()[0];
@@ -781,7 +788,7 @@ Tell:
 function setQ(q){set({question:q});}
 function toggleMenu(){set({menuOpen:!S.menuOpen});}
 function closeMenu(){set({menuOpen:false});}
-  
+
 // ═══════════
 // LOGO
 // ═══════════
@@ -816,12 +823,12 @@ function buildHTML(){
 function renderHome(){
   const t=tx(); const l=S.lang;
   const feats=[
-    {ic:"🤖",title:"AI Chat Tutor",desc:l==="hi"?"Professor level NCERT jawab":"Professor level NCERT answers",free:true,tag:l==="hi"?"10/day free":"10/day free"},
-    {ic:"📝",title:"MCQ Generator",desc:l==="hi"?"Instant chapter-wise MCQ":"Instant chapter-wise MCQ",free:true,tag:l==="hi"?"3 baar free":"3 times free"},
-    {ic:"📜",title:"PYQ Finder",desc:l==="hi"?"Real board exam questions":"Real board exam questions",free:true,tag:l==="hi"?"3 baar free":"3 times free"},
-    {ic:"🧪",title:"Test Mode",desc:l==="hi"?"Timer ke saath full test":"Full test with timer",free:true,tag:l==="hi"?"2 baar free":"2 times free"},
-    {ic:"🔮",title:"Exam Predictor",desc:l==="hi"?"Is saal kya aayega":"What's coming this year",free:false,tag:"Premium"},
-    {ic:"📊",title:"Analysis",desc:l==="hi"?"Weak/Strong topics track":"Track weak/strong topics",free:false,tag:"Premium"},
+    {ic:"🤖",title:"AI Chat Tutor",desc:l==="hi"?"Professor level NCERT jawab":"Professor level NCERT answers"},
+    {ic:"📝",title:"MCQ Generator",desc:l==="hi"?"Instant chapter-wise MCQ":"Instant chapter-wise MCQ"},
+    {ic:"📜",title:"PYQ Finder",desc:l==="hi"?"Real board exam questions":"Real board exam questions"},
+    {ic:"🧪",title:"Test Mode",desc:l==="hi"?"Timer ke saath full test":"Full test with timer"},
+    {ic:"🔮",title:"Exam Predictor",desc:l==="hi"?"Is saal kya aayega":"What's coming this year"},
+    {ic:"📊",title:"Analysis",desc:l==="hi"?"Weak/Strong topics track":"Track weak/strong topics"},
   ];
   const steps=l==="hi"
     ?["Board aur Class chuniye","AI se koi bhi Science sawaal poochho","MCQ aur PYQ se practice karein","Analysis se weak points pakdo"]
@@ -849,7 +856,7 @@ function renderHome(){
     <div class="hp-section">
       <div class="sec-label">${t.featTitle}</div>
       <div class="feat-grid">
-        ${feats.map(f=>`<div class="feat-card"><div class="feat-ic">${f.ic}</div><div><div class="feat-title">${f.title}</div><div class="feat-desc">${f.desc}</div><span class="${f.free?"feat-tag-free":"feat-tag-pro"}">${f.tag}</span></div></div>`).join("")}
+        ${feats.map(f=>`<div class="feat-card"><div class="feat-ic">${f.ic}</div><div><div class="feat-title">${f.title}</div><div class="feat-desc">${f.desc}</div></div></div>`).join("")}
       </div>
     </div>
     <div class="hp-section">
@@ -870,7 +877,10 @@ function renderHome(){
     </div>
     <div class="hp-section">
       <button class="hp-cta" onclick="document.getElementById('board-sec').scrollIntoView({behavior:'smooth'})">${t.cta}</button>
-      <div class="hp-free">${t.freeNote}</div>
+      <button style="width:100%;margin-top:10px;background:#fff;border:1.5px solid var(--border);border-radius:14px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;font-family:inherit;color:var(--dark)" onclick="set({screen:'login'})">
+        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        ${l==="hi"?"Google se Login karein":"Login with Google"}
+      </button>
     </div>
   </div>`;
 }
@@ -939,11 +949,13 @@ function renderApp(){
           </div>`:`<div class="sm-user" onclick="set({screen:'login',menuOpen:false})" style="cursor:pointer">
             <div class="sm-avatar">?</div>
             <span class="sm-user-name" style="color:#60a5fa">Login karein</span>
-          </div>`}
+                      </div>`}
         </div>
         <div class="sm-nav">
           <button class="sm-item ${tab==="askAI"?"active":""}" onclick="set({tab:'askAI',menuOpen:false})"><span class="sm-item-icon">🤖</span>${t.askAI}</button>
-          <button class="sm-item ${tab==="practice"?"active":""}" onclick="set({tab:'practice',menuOpen:false})"><span class="sm-item-icon">📚</span>${t.practice}</button>
+          <button class="sm-item ${tab==="mcq"?"active":""}" onclick="set({tab:'mcq',menuOpen:false})"><span class="sm-item-icon">📝</span>MCQ</button>
+          <button class="sm-item ${tab==="pyq"?"active":""}" onclick="set({tab:'pyq',menuOpen:false})"><span class="sm-item-icon">📜</span>PYQ</button>
+          <button class="sm-item ${tab==="test"?"active":""}" onclick="set({tab:'test',menuOpen:false})"><span class="sm-item-icon">🧪</span>Test</button>
           <button class="sm-item ${tab==="analysis"?"active":""}" onclick="set({tab:'analysis',menuOpen:false})"><span class="sm-item-icon">📊</span>${t.analysis}</button>
           <button class="sm-item ${tab==="predictor"?"active":""}" onclick="set({tab:'predictor',menuOpen:false})"><span class="sm-item-icon">🔮</span>${t.predictor}</button>
           <div class="sm-divider"></div>
@@ -962,7 +974,7 @@ function renderApp(){
             <button class="menu-toggle" onclick="toggleMenu()">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
             </button>
-            <span class="topbar-title">${tab==="askAI"?t.askAI:tab==="practice"?t.practice:tab==="analysis"?t.analysisTitle:tab==="predictor"?t.predictTitle:t.settingsTitle}</span>
+            <span class="topbar-title">${tab==="askAI"?t.askAI:tab==="mcq"?"MCQ":tab==="pyq"?"PYQ":tab==="test"?"Test":tab==="analysis"?t.analysisTitle:tab==="predictor"?t.predictTitle:t.settingsTitle}</span>
           </div>
           <div class="topbar-right">
             <button class="lang-sw" onclick="set({lang:S.lang==='hi'?'en':'hi'})">${S.lang==="hi"?"EN":"हि"}</button>
@@ -970,14 +982,16 @@ function renderApp(){
         </div>
 
         ${tab==="askAI"?renderChat():""}
-        ${tab==="practice"?renderPractice():""}
+        ${tab==="mcq"?renderMCQ():""}
+        ${tab==="pyq"?renderPYQ():""}
+        ${tab==="test"?renderTest():""}
         ${tab==="analysis"?renderAnalysis():""}
         ${tab==="predictor"?renderPredictor():""}
         ${tab==="settings"?renderSettings():""}
       </div>
     </div>`;
-  }
-  
+}
+
 // ── LIMIT POPUP ──
 function renderLimitPopup(){
   const t=tx();
@@ -1047,7 +1061,6 @@ function renderPractice(){
 // ── MCQ ──
 function renderMCQ(){
   const t=tx(); const {mcqs,mcqLoading,mcqErr,mcqAns,mcqScore,mcqCh,mcqCnt}=S;
-  const left=S.user?freeLeft("mcq"):Math.max(0,FREE_LIMITS.mcq-(S.guest_mcq||0));
   if(mcqLoading) return`<div class="loading"><div class="spinner"></div><div class="loading-t">${t.generating}</div><div class="loading-s">${mcqCnt} MCQs • ${mcqCh}</div></div>`;
   if(mcqScore) return`<div class="screen">
     <div class="score-hdr"><div class="score-em">${mcqScore.c/mcqScore.total>=0.6?"🏆":"📚"}</div><div class="score-n">${mcqScore.c}/${mcqScore.total}</div><div class="score-p">${Math.round((mcqScore.c/mcqScore.total)*100)}%</div></div>
@@ -1070,7 +1083,6 @@ function renderMCQ(){
     <button class="submit-btn ${Object.keys(mcqAns).length<mcqs.length?"n":"r"}" onclick="submitMCQ()" ${Object.keys(mcqAns).length<mcqs.length?"disabled":""}>${t.submit} (${Object.keys(mcqAns).length}/${mcqs.length})</button>
   </div>`;
   return`<div class="screen">
-    ${!isPremium()?`<div class="usage-bar ${left===0?"empty":""}"><span>${left>0?`✅ ${left} ${t.freeLeft}`:`🔒 ${t.freeUsed}`}</span>${left===0?`<span onclick="set({showLimitPopup:true})" style="cursor:pointer;color:var(--blue);font-weight:700">Upgrade →</span>`:""}</div>`:""}
     <div class="form-group"><label class="form-label">${t.chapterLbl}</label>
     <select class="form-select" onchange="set({mcqCh:this.value})">${ch().map(c=>`<option value="${c}" ${S.mcqCh===c?"selected":""}>${c}</option>`).join("")}</select></div>
     <div class="form-group"><label class="form-label">${t.countLbl}</label>
@@ -1083,9 +1095,7 @@ function renderMCQ(){
 // ── PYQ ──
 function renderPYQ(){
   const t=tx(); const {pyqs,pyqLoading,pyqErr,pyqRev,pyqYrs}=S;
-  const left=S.user?freeLeft("pyq"):Math.max(0,FREE_LIMITS.pyq-(S.guest_pyq||0));
   return`<div class="screen">
-    ${!isPremium()?`<div class="usage-bar ${left===0?"empty":""}"><span>${left>0?`✅ ${left} ${t.freeLeft}`:`🔒 ${t.freeUsed}`}</span>${left===0?`<span onclick="set({showLimitPopup:true})" style="cursor:pointer;color:var(--blue);font-weight:700">Upgrade →</span>`:""}</div>`:""}
     <div class="form-group"><label class="form-label">${t.chapterLbl}</label>
     <select class="form-select" onchange="set({pyqCh:this.value})">${ch().map(c=>`<option value="${c}" ${S.pyqCh===c?"selected":""}>${c}</option>`).join("")}</select></div>
     <div class="form-group"><label class="form-label">${t.yearLbl}</label>
@@ -1102,7 +1112,7 @@ function renderPYQ(){
     </div>
   </div>`;
   }
-  
+ 
 // ── TEST ──
 function renderTest(){
   const t=tx(); const {testQs,testLoading,testRunning,testScore,testAns,testTimer,testCh,testCnt}=S;
@@ -1128,7 +1138,6 @@ function renderTest(){
     <button class="submit-btn r" onclick="submitTest()">${t.testDone}</button>
   </div>`;
   return`<div class="screen">
-    ${!isPremium()?`<div class="usage-bar ${left===0?"empty":""}"><span>${left>0?`✅ ${left} ${t.freeLeft}`:`🔒 ${t.freeUsed}`}</span>${left===0?`<span onclick="set({showLimitPopup:true})" style="cursor:pointer;color:var(--blue);font-weight:700">Upgrade →</span>`:""}</div>`:""}
     <div class="form-group"><label class="form-label">${t.chapterLbl}</label>
     <select class="form-select" onchange="set({testCh:this.value})">${ch().map(c=>`<option value="${c}" ${S.testCh===c?"selected":""}>${c}</option>`).join("")}</select></div>
     <div class="form-group"><label class="form-label">${t.countLbl}</label>
@@ -1178,7 +1187,7 @@ function renderPredictor(){
       <div style="font-size:14px;font-weight:700;color:var(--blue);margin-bottom:4px">🔮 AI Exam Predictor</div>
       <div style="font-size:12px;color:#4338ca;line-height:1.5">${S.lang==="hi"?"Pichle 10 saalon ka pattern analyze karke AI predict karega":"Analyzes 10 years of patterns to predict important topics"}</div>
     </div>
-    ${!isPremium()?`<div class="usage-bar ${left===0?"empty":""}"><span>${left>0?`✅ ${left} ${t.freeLeft}`:`🔒 ${t.freeUsed}`}</span>${left===0?`<span onclick="set({showLimitPopup:true})" style="cursor:pointer;color:var(--blue);font-weight:700">Upgrade →</span>`:""}</div>`:""}
+
     <div class="form-group"><label class="form-label">${t.chapterLbl}</label>
     <select class="form-select" id="predSel">${ch().map(c=>`<option value="${c}">${c}</option>`).join("")}</select></div>
     ${S.predErr?`<div class="err-box">${S.predErr}</div>`:""}
@@ -1228,8 +1237,8 @@ function renderSettings(){
         ].map(([label,used,max])=>`<div class="settings-item"><span class="si-label">${label}</span><span class="si-val">${used}/${max}</span></div>`).join("")}
     </div>
   </div>`;
-}
-
+  }
+      
 // ═══════════
 // BIND EVENTS
 // ═══════════
@@ -1254,4 +1263,3 @@ initAuth().then(()=>render());
 </script>
 </body>
 </html>
-
