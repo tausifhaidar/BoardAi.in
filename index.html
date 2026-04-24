@@ -277,11 +277,13 @@ button,select,textarea{font-family:'Inter',system-ui,sans-serif}
 </head>
 <body>
 <div id="app"></div>
-
+  
 <script>
 // ╔═══════════════════════════════════╗
 // ║  CONFIG — APNI KEYS YAHAN DAALO   ║
 // ╚═══════════════════════════════════╝
+
+const GROQ_KEY = "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";
 const RAZORPAY_KEY = "rzp_live_Sf2jZgeH4JfE8h";
 const SUPABASE_URL = "https://btbejchwqqtijimhvfax.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0YmVqY2h3cXF0aWppbWh2ZmF4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4OTY5NDgsImV4cCI6MjA5MTQ3Mjk0OH0.tzKjbRSkYy5bzAFjCcAtq40_3FRpyUfrNqFjZvCIvko";
@@ -295,7 +297,7 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 // ═══════════
 // DATA
 // ═══════════
-const GEMINI_MODEL = "gemini-2.0-flash";
+const GROQ_MODEL = "llama-3.3-70b-versatile";
 const YEARS = [2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025];
 const CHAPTERS = {
   10:["Chemical Reactions & Equations","Acids, Bases & Salts","Metals & Non-Metals","Carbon & its Compounds","Periodic Classification","Life Processes","Control & Coordination","Reproduction","Heredity & Evolution","Light – Reflection & Refraction","Human Eye","Electricity","Magnetic Effects","Sources of Energy","Our Environment"],
@@ -317,7 +319,7 @@ const PLANS = {
   99:{name:"Popular ⭐",features:"10-20X more than free"},
   149:{name:"Pro — Full Power",features:"Unlimited Everything • Fastest AI • Priority Access"}
 };
-  
+
 // ═══════════
 // STATE
 // ═══════════
@@ -519,27 +521,25 @@ function checkCan(feat){
 }
 
 // ═══════════
-// GEMINI
+// GROQ API
 // ═══════════
 async function gemini(prompt, useWeb=false){
-  const res = await fetch("/api/gemini", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ prompt })
+  const res=await fetch("https://api.groq.com/openai/v1/chat/completions",{
+    method:"POST",
+    headers:{"Content-Type":"application/json","Authorization":`Bearer ${GROQ_KEY}`},
+    body:JSON.stringify({
+      model:GROQ_MODEL,
+      messages:[{role:"user",content:prompt}],
+      temperature:0.7,
+      max_tokens:2048
+    })
   });
-
-  const data = await res.json();
-
-  if(data.error) throw new Error(data.error);
-
-  return data?.candidates?.[0]?.content?.parts
-    ?.map(p => p.text || "")
-    .join("") || "";
+  const data=await res.json();
+  if(data.error) throw new Error(data.error.message);
+  return data?.choices?.[0]?.message?.content||"";
 }
 async function geminiJSON(prompt, useWeb=false){
-  const t=await gemini(prompt,useWeb);
+  const t=await gemini(prompt,false);
   const m=t.match(/\{[\s\S]*\}/);
   if(!m) throw new Error("no json");
   return JSON.parse(m[0]);
@@ -585,8 +585,8 @@ function openPayment(amount){
   };
   const rzp = new Razorpay(options);
   rzp.open();
-}
-
+    }
+                        
 // ═══════════
 // ACTIONS
 // ═══════════
@@ -754,8 +754,8 @@ function submitTest(){
     strongMap:r>=0.6?{...S.strongMap,[ch]:(S.strongMap[ch]||0)+1}:S.strongMap,
     weakMap:r<0.6?{...S.weakMap,[ch]:(S.weakMap[ch]||0)+1}:S.weakMap
   });
-  }
-  
+}
+
 async function runPredictor(){
   if(!checkCan("predict")){ set({showLimitPopup:true}); return; }
   const chapter=document.getElementById("predSel")?.value||ch()[0];
@@ -788,7 +788,7 @@ Tell:
 function setQ(q){set({question:q});}
 function toggleMenu(){set({menuOpen:!S.menuOpen});}
 function closeMenu(){set({menuOpen:false});}
-
+  
 // ═══════════
 // LOGO
 // ═══════════
@@ -883,8 +883,8 @@ function renderHome(){
       </button>
     </div>
   </div>`;
-}
-
+  }
+  
 // ── MEDIUM / CLASS ──
 function renderMedium(){
   const t=tx();
@@ -949,7 +949,7 @@ function renderApp(){
           </div>`:`<div class="sm-user" onclick="set({screen:'login',menuOpen:false})" style="cursor:pointer">
             <div class="sm-avatar">?</div>
             <span class="sm-user-name" style="color:#60a5fa">Login karein</span>
-                      </div>`}
+          </div>`}
         </div>
         <div class="sm-nav">
           <button class="sm-item ${tab==="askAI"?"active":""}" onclick="set({tab:'askAI',menuOpen:false})"><span class="sm-item-icon">🤖</span>${t.askAI}</button>
@@ -991,7 +991,7 @@ function renderApp(){
       </div>
     </div>`;
 }
-
+  
 // ── LIMIT POPUP ──
 function renderLimitPopup(){
   const t=tx();
@@ -1111,8 +1111,8 @@ function renderPYQ(){
     </div>`).join("")}
     </div>
   </div>`;
-  }
- 
+}
+
 // ── TEST ──
 function renderTest(){
   const t=tx(); const {testQs,testLoading,testRunning,testScore,testAns,testTimer,testCh,testCnt}=S;
@@ -1144,8 +1144,8 @@ function renderTest(){
     <div class="pill-group">${[10,20,30].map(n=>`<button class="pill ${testCnt===n?"on":""}" onclick="set({testCnt:${n}})">${n}</button>`).join("")}</div></div>
     <button class="action-btn" onclick="startTest()">${t.startTest}</button>
   </div>`;
-}
-
+  }
+ 
 // ── ANALYSIS ──
 function renderAnalysis(){
   const t=tx(); const {weakMap,strongMap,totalAsked,totalMCQ,totalCorrect}=S;
@@ -1237,7 +1237,7 @@ function renderSettings(){
         ].map(([label,used,max])=>`<div class="settings-item"><span class="si-label">${label}</span><span class="si-val">${used}/${max}</span></div>`).join("")}
     </div>
   </div>`;
-  }
+      }
       
 // ═══════════
 // BIND EVENTS
@@ -1263,3 +1263,4 @@ initAuth().then(()=>render());
 </script>
 </body>
 </html>
+
