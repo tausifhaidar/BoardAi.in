@@ -283,7 +283,6 @@ button,select,textarea{font-family:'Inter',system-ui,sans-serif}
 // ║  CONFIG — APNI KEYS YAHAN DAALO   ║
 // ╚═══════════════════════════════════╝
 
-const GROQ_KEY = "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";
 const RAZORPAY_KEY = "rzp_live_Sf2jZgeH4JfE8h";
 const SUPABASE_URL = "https://btbejchwqqtijimhvfax.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0YmVqY2h3cXF0aWppbWh2ZmF4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4OTY5NDgsImV4cCI6MjA5MTQ3Mjk0OH0.tzKjbRSkYy5bzAFjCcAtq40_3FRpyUfrNqFjZvCIvko";
@@ -297,7 +296,6 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 // ═══════════
 // DATA
 // ═══════════
-const GROQ_MODEL = "llama-3.3-70b-versatile";
 const YEARS = [2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025];
 const CHAPTERS = {
   10:["Chemical Reactions & Equations","Acids, Bases & Salts","Metals & Non-Metals","Carbon & its Compounds","Periodic Classification","Life Processes","Control & Coordination","Reproduction","Heredity & Evolution","Light – Reflection & Refraction","Human Eye","Electricity","Magnetic Effects","Sources of Energy","Our Environment"],
@@ -524,15 +522,10 @@ function checkCan(feat){
 // GROQ API
 // ═══════════
 async function gemini(prompt, useWeb=false){
-  const res=await fetch("https://api.groq.com/openai/v1/chat/completions",{
+  const res=await fetch("/api/chat",{
     method:"POST",
-    headers:{"Content-Type":"application/json","Authorization":`Bearer ${GROQ_KEY}`},
-    body:JSON.stringify({
-      model:GROQ_MODEL,
-      messages:[{role:"user",content:prompt}],
-      temperature:0.7,
-      max_tokens:2048
-    })
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({prompt, useWeb})
   });
   const data=await res.json();
   if(data.error) throw new Error(data.error.message);

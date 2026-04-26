@@ -3,18 +3,21 @@ export default async function handler(req, res) {
   
   const { prompt, useWeb } = req.body;
   
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GEMINI_KEY}`;
+  const url = 'https://api.groq.com/openai/v1/chat/completions';
   
   const body = {
-    contents: [{ parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.7, maxOutputTokens: 2048 }
+    model: 'llama-3.3-70b-versatile',
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.7,
+    max_tokens: 2048
   };
-  
-  if(useWeb) body.tools = [{ google_search: {} }];
   
   const response = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.GROQ_KEY}`
+    },
     body: JSON.stringify(body)
   });
   
