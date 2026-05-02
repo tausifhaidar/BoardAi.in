@@ -1,342 +1,363 @@
-DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>BoardAI - Board Exam AI Tutor</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>BoardAI — Expert AI Mentor</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 *{-webkit-tap-highlight-color:transparent;box-sizing:border-box}
-body{font-family:'Inter',system-ui,sans-serif;margin:0;padding:0}
-::-webkit-scrollbar{width:3px}
-::-webkit-scrollbar-thumb{background:#e2e8f0;border-radius:4px}
-.msg-bubble{white-space:pre-wrap;word-break:break-word}
-@keyframes bop{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
-.dot{animation:bop 1.2s infinite}.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+body{font-family:'Inter',system-ui,sans-serif;background:#f7f9fb;color:#191c1e;margin:0}
+textarea,select,input,button{font-family:inherit}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:#c3c6d7;border-radius:4px}
+.side{transform:translateX(-100%);transition:transform .25s cubic-bezier(.4,0,.2,1)}
+.side.open{transform:translateX(0)}
+.msg{white-space:pre-wrap;word-break:break-word}
+@keyframes bop{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+.dot{width:7px;height:7px;border-radius:50%;background:#737686;animation:bop 1.2s infinite}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
 @keyframes spin{to{transform:rotate(360deg)}}
-.spinner{animation:spin 0.8s linear infinite}
-.side-menu{transform:translateX(-100%);transition:transform 0.25s cubic-bezier(.4,0,.2,1)}
-.side-menu.open{transform:translateX(0)}
-textarea,select,input,button{font-family:'Inter',system-ui,sans-serif}
+.spin{animation:spin .8s linear infinite}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.fadeUp{animation:fadeUp .25s ease}
+.card{background:#fff;border:1px solid #e0e3e5;border-radius:16px;box-shadow:0 4px 20px rgba(15,23,42,.05)}
+.btn-primary{background:#2563eb;color:#fff;border:none;border-radius:10px;font-weight:600;cursor:pointer;transition:background .15s}
+.btn-primary:hover{background:#1d4ed8}
+.btn-dark{background:#0f172a;color:#fff;border:none;border-radius:10px;font-weight:600;cursor:pointer;transition:background .15s}
+.btn-dark:hover{background:#1e293b}
+.inp{background:#fff;border:1.5px solid #c3c6d7;border-radius:10px;outline:none;transition:border-color .15s}
+.inp:focus{border-color:#2563eb}
+.pill{border-radius:9999px;border:1.5px solid #c3c6d7;background:#f2f4f6;color:#434655;font-weight:600;cursor:pointer;transition:all .15s}
+.pill.on{background:#0f172a;border-color:#0f172a;color:#fff}
 </style>
 </head>
-<body class="bg-white text-slate-900">
-<div id="root"></div>
+<body>
+<div id="app"></div>
 <script>
-// ╔══════════════════════════════╗
-// ║  CONFIG — KEYS YAHAN DAALO  ║
-// ╚══════════════════════════════╝";
+// ╔════════════════════════════╗
+// ║  KEYS — YAHAN DAALO       ║
+// ╚════════════════════════════╝
 const RAZORPAY_KEY  = "rzp_live_Sf2jZgeH4JfE8h";
 const SUPABASE_URL  = "https://btbejchwqqtijimhvfax.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0YmVqY2h3cXF0aWppbWh2ZmF4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4OTY5NDgsImV4cCI6MjA5MTQ3Mjk0OH0.tzKjbRSkYy5bzAFjCcAtq40_3FRpyUfrNqFjZvCIvko";
+// Groq key is hidden in /api/chat — no key here!
 
-// ── SUPABASE ──
-const { createClient } = supabase;
+// ─── SUPABASE ───
+const {createClient} = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
-// ── DATA ──
+// ─── DATA ───
 const YEARS = [2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025];
-const CH = {
+const CHS = {
   10:["Chemical Reactions & Equations","Acids Bases & Salts","Metals & Non-Metals","Carbon & its Compounds","Periodic Classification","Life Processes","Control & Coordination","Reproduction","Heredity & Evolution","Light – Reflection & Refraction","Human Eye","Electricity","Magnetic Effects","Sources of Energy","Our Environment"],
   11:["Physical World","Kinematics","Laws of Motion","Work Energy & Power","Gravitation","Thermodynamics","Kinetic Theory","Oscillations & Waves","Structure of Atom","Chemical Bonding","States of Matter","Equilibrium","Redox Reactions","s-Block Elements","p-Block Elements","Organic Chemistry","Hydrocarbons","Cell Biology","Biomolecules","Plant Kingdom","Animal Kingdom"],
   12:["Electric Charges & Fields","Current Electricity","Moving Charges & Magnetism","Electromagnetic Induction","Alternating Current","Wave Optics","Dual Nature of Radiation","Atoms & Nuclei","Semiconductor Electronics","Solid State","Solutions","Electrochemistry","Chemical Kinetics","Surface Chemistry","Coordination Compounds","Haloalkanes","Alcohols Phenols Ethers","Aldehydes & Ketones","Amines","Biomolecules","Genetics & Evolution","Human Health & Disease","Biotechnology","Ecosystem"]
 };
-const SAMPLES = {
-  10:{hi:["Photosynthesis kya hai?","Ohm ka niyam samjhao","Acid aur Base mein fark?"],en:["What is Photosynthesis?","Explain Ohm's Law","Acid vs Base difference?"]},
-  11:{hi:["Newton ke niyam batao","Boyle's law samjhao","Aufbau principle kya hai?"],en:["Newton's Laws of Motion","Explain Boyle's Law","What is Aufbau Principle?"]},
-  12:{hi:["Faraday ka niyam batao","Half life kya hoti hai?","Electrochemistry samjhao"],en:["Explain Faraday's Law","What is Half Life?","Explain Electrochemistry"]}
+const SAMPLES={
+  10:{hi:["Photosynthesis kya hai?","Ohm ka niyam example ke saath samjhao","Acid Rain kaise hoti hai?"],en:["Explain Photosynthesis with diagram","Derive Ohm's Law with example","What causes Acid Rain?"]},
+  11:{hi:["Newton ke teen niyam example ke saath","Thermodynamics ki first law samjhao","Atomic orbital kya hote hain?"],en:["Newton's 3 Laws with examples","Explain First Law of Thermodynamics","What are atomic orbitals?"]},
+  12:{hi:["Faraday ka niyam derive karo","Electrochemistry mein EMF kya hai?","DNA replication kaise hoti hai?"],en:["Derive Faraday's Law","What is EMF in Electrochemistry?","Explain DNA Replication"]}
 };
-const CHIPS = {
-  hi:["📝 Short mein","🔢 Formula","🧮 Numerical","📖 Detail mein","⚡ Example","🔑 Key points"],
-  en:["📝 Brief","🔢 Formula","🧮 Numerical","📖 Detailed","⚡ Example","🔑 Key points"]
-};
-const FREE = {chat:10,mcq:3,pyq:3,test:2,predict:2};
-const PLANS = {
-  49:{name:"Starter",desc:"2-5× more than free"},
-  99:{name:"Popular ⭐",desc:"10-20× more than free"},
-  149:{name:"Pro — Full Power",desc:"Unlimited Everything • Fastest AI • Priority Access"}
+const FREE={chat:10,mcq:3,pyq:3,test:2,predict:2};
+const PLANS={
+  49:{n:"Starter",d:"2-5× more than free",f:["Unlimited AI Chat","MCQ Generator","Study Notes"]},
+  99:{n:"Popular ⭐",d:"10-20× more than free",f:["Everything in Starter","PYQ Finder","Timed Tests","Exam Predictor","Analysis"]},
+  149:{n:"Pro — Full Power",d:"Unlimited Everything • Fastest AI • Priority",f:["Unlimited Everything","Priority AI","Advanced Analytics","PDF Downloads","Expert Support"]}
 };
 
-// ── STATE ──
-let S = {
-  screen:"landing", lang:"en",
-  board:null, medium:null, cls:null,
-  tab:"chat", menuOpen:false, practiceTab:"mcq",
-  user:null, profile:null,
-  msgs:[], question:"", chatLoading:false,
-  mcqCh:"", mcqCnt:20, mcqs:[], mcqLoading:false, mcqAns:{}, mcqScore:null, mcqErr:"",
-  pyqCh:"", pyqYrs:[], pyqs:[], pyqLoading:false, pyqRev:{}, pyqErr:"",
-  testCh:"", testCnt:20, testQs:[], testLoading:false, testRunning:false,
-  testAns:{}, testScore:null, testTimer:0, testIv:null,
-  weakMap:{}, strongMap:{}, totalAsked:0, totalMCQ:0, totalCorrect:0,
-  predCh:"", predLoading:false, prediction:"", predErr:"",
+// ─── STATE ───
+let S={
+  sc:"landing",lang:"en",
+  board:null,medium:null,cls:null,
+  tab:"chat",ptab:"mcq",menuOpen:false,
+  user:null,profile:null,
+  // chat — FULL HISTORY for memory
+  history:[],  // [{role:"user"|"assistant", content:"..."}]
+  question:"",loading:false,
+  // mcq
+  mcqCh:"",mcqCnt:20,mcqs:[],mcqLoading:false,mcqAns:{},mcqScore:null,mcqErr:"",
+  // pyq
+  pyqCh:"",pyqYrs:[],pyqs:[],pyqLoading:false,pyqRev:{},pyqErr:"",
+  // test
+  testCh:"",testCnt:20,testQs:[],testLoading:false,testRunning:false,
+  testAns:{},testScore:null,testTimer:0,testIv:null,
+  // stats
+  weakMap:{},strongMap:{},totalAsked:0,totalMCQ:0,totalCorrect:0,
+  // predictor
+  predLoading:false,prediction:"",predErr:"",
   showPrem:false,
 };
+const set=(p,noR=false)=>{Object.assign(S,p);if(!noR)render();};
+const isPrem=()=>S.profile?.is_premium||false;
+const used=f=>S.profile?.[`usage_${f}`]||S[`g_${f}`]||0;
+const canUse=f=>isPrem()||used(f)<FREE[f];
+const chs=()=>S.cls?CHS[S.cls]:[];
+const esc=s=>(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const fmtT=s=>{const m=Math.floor(s/60),sc=s%60;return`${m}:${sc.toString().padStart(2,"0")}`;};
+const L=()=>S.lang;
 
-const set = (p,noR=false) => { Object.assign(S,p); if(!noR) render(); };
-const isPrem = () => S.profile?.is_premium||false;
-const usage  = f => S.profile?.[`usage_${f}`]||S[`g_${f}`]||0;
-const canUse = f => isPrem()||usage(f)<FREE[f];
-const chs    = () => S.cls?CH[S.cls]:[];
-const esc    = s => (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-const fmtT   = s => { const m=Math.floor(s/60),sec=s%60; return `${m}:${sec.toString().padStart(2,"0")}`; };
-const l      = () => S.lang;
-
-// ── AUTH ──
-async function initAuth(){
-  const {data:{session}} = await sb.auth.getSession();
-  if(session?.user){ S.user=session.user; await loadProfile(session.user); applyProfile(); }
+// ─── AUTH ───
+async function init(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(session?.user){S.user=session.user;await loadProfile(session.user);applyProfile();}
   sb.auth.onAuthStateChange(async(ev,sess)=>{
     if(ev==="SIGNED_IN"&&sess?.user){
-      S.user=sess.user; await loadProfile(sess.user);
-      if(S.profile?.board&&S.profile?.cls){
-        S.board=S.profile.board; S.medium=S.profile.medium||"en";
-        S.cls=S.profile.cls; S.lang=S.medium;
-        initChapters(); S.screen="app";
-      } else { S.screen="boardSelect"; }
+      S.user=sess.user;await loadProfile(sess.user);
+      if(S.profile?.board&&S.profile?.cls){applyProfile();S.sc="app";}
+      else{S.sc="boardSelect";}
       render();
-    } else if(ev==="SIGNED_OUT"){ S.user=null;S.profile=null;S.screen="landing";render(); }
+    }else if(ev==="SIGNED_OUT"){Object.assign(S,{user:null,profile:null,sc:"landing"});render();}
   });
 }
-
-async function loadProfile(user){
-  let {data} = await sb.from('user_profiles').select('*').eq('id',user.id).single();
+async function loadProfile(u){
+  let{data}=await sb.from('user_profiles').select('*').eq('id',u.id).single();
   if(!data){
     const today=new Date().toISOString().split('T')[0];
-    const {data:np} = await sb.from('user_profiles').insert({
-      id:user.id,email:user.email,is_premium:false,plan:'free',
+    const{data:np}=await sb.from('user_profiles').insert({
+      id:u.id,email:u.email,is_premium:false,plan:'free',
       usage_chat:0,usage_mcq:0,usage_pyq:0,usage_test:0,usage_predict:0,reset_date:today
     }).select().single();
     S.profile=np;
-  } else {
+  }else{
     const today=new Date().toISOString().split('T')[0];
     if(data.reset_date!==today){
-      await sb.from('user_profiles').update({usage_chat:0,usage_mcq:0,usage_pyq:0,usage_test:0,usage_predict:0,reset_date:today}).eq('id',user.id);
-      data.usage_chat=0;data.usage_mcq=0;data.usage_pyq=0;data.usage_test=0;data.usage_predict=0;
+      await sb.from('user_profiles').update({usage_chat:0,usage_mcq:0,usage_pyq:0,usage_test:0,usage_predict:0,reset_date:today}).eq('id',u.id);
+      ['chat','mcq','pyq','test','predict'].forEach(f=>data[`usage_${f}`]=0);
     }
     S.profile=data;
   }
 }
-
 function applyProfile(){
   if(S.profile?.board&&S.profile?.cls){
-    S.board=S.profile.board; S.medium=S.profile.medium||"en";
-    S.cls=S.profile.cls; S.lang=S.medium; initChapters(); S.screen="app";
+    S.board=S.profile.board;S.medium=S.profile.medium||"en";
+    S.cls=S.profile.cls;S.lang=S.medium;
+    const c=S.cls;S.mcqCh=CHS[c][0];S.pyqCh=CHS[c][0];S.testCh=CHS[c][0];
   }
 }
-
-function initChapters(){
-  if(!S.cls) return;
-  S.mcqCh=CH[S.cls][0]; S.pyqCh=CH[S.cls][0]; S.testCh=CH[S.cls][0]; S.predCh=CH[S.cls][0];
-}
-
-async function googleLogin(){ await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.href}}); }
-async function logout(){ await sb.auth.signOut(); }
-async function saveProfile(u){ if(S.user&&S.profile){ Object.assign(S.profile,u); await sb.from('user_profiles').update(u).eq('id',S.user.id); } }
+async function gLogin(){await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.href}});}
+async function logout(){await sb.auth.signOut();}
+async function saveProf(u){if(S.user&&S.profile){Object.assign(S.profile,u);await sb.from('user_profiles').update(u).eq('id',S.user.id);}}
 async function incUsage(f){
-  if(S.user&&S.profile){ S.profile[`usage_${f}`]=(S.profile[`usage_${f}`]||0)+1; await sb.from('user_profiles').update({[`usage_${f}`]:S.profile[`usage_${f}`]}).eq('id',S.user.id); }
-  else { S[`g_${f}`]=(S[`g_${f}`]||0)+1; }
+  const key=`usage_${f}`;
+  if(S.user&&S.profile){S.profile[key]=(S.profile[key]||0)+1;await sb.from('user_profiles').update({[key]:S.profile[key]}).eq('id',S.user.id);}
+  else S[`g_${f}`]=(S[`g_${f}`]||0)+1;
 }
 
-// ── GROQ ──
-async function ai(prompt){
+// ─── AI (via /api/chat — key hidden) ───
+// Multi-turn: sends full history for memory!
+async function ai(messages){
   const r=await fetch("/api/chat",{
     method:"POST",
     headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({prompt})
+    body:JSON.stringify({messages})
   });
   const d=await r.json();
-  if(d.error) throw new Error(d.error.message);
+  if(d.error) throw new Error(d.error.message||JSON.stringify(d.error));
   return d?.choices?.[0]?.message?.content||"";
 }
-async function aiJSON(p){const t=await ai(p);const m=t.match(/\{[\s\S]*\}/);if(!m) throw new Error("no json");return JSON.parse(m[0]);}
-
-// ── RAZORPAY ──
-function openPayment(amt){
+async function aiSimple(prompt){
+  return ai([{role:"user",content:prompt}]);
+}
+async function aiJSON(prompt){
+  const t=await aiSimple(prompt);
+  const m=t.match(/\{[\s\S]*\}/);if(!m) throw new Error("no json");
+  return JSON.parse(m[0]);
+}
+ 
+// ─── RAZORPAY ───
+function pay(amt){
   new Razorpay({
     key:RAZORPAY_KEY,amount:amt*100,currency:"INR",name:"BoardAI",
-    description:`${PLANS[amt].name} Plan`,
+    description:`${PLANS[amt].n} Plan`,
     handler:async r=>{
       if(S.user){
-        const exp=new Date(); exp.setMonth(exp.getMonth()+1);
+        const exp=new Date();exp.setMonth(exp.getMonth()+1);
         await sb.from('user_profiles').update({is_premium:true,plan:String(amt),plan_expiry:exp.toISOString()}).eq('id',S.user.id);
         S.profile.is_premium=true;
-        try{ await sb.from('payments').insert({user_id:S.user.id,amount:amt,status:'success',razorpay_id:r.razorpay_payment_id}); }catch(e){}
+        try{await sb.from('payments').insert({user_id:S.user.id,amount:amt,status:'success',razorpay_id:r.razorpay_payment_id});}catch(e){}
       }
-      set({showPrem:false}); alert("🎉 Premium activated! Sab features unlock ho gaye!");
+      set({showPrem:false});alert("🎉 Premium activated!");
     },
     prefill:{email:S.user?.email||""},theme:{color:"#2563eb"}
   }).open();
 }
 
-// ── ACTIONS ──
+// ─── CHAT ACTIONS ───
 function goToApp(board,medium,cls){
-  S.board=board; S.medium=medium; S.cls=cls; S.lang=medium;
-  initChapters();
-  S.screen="app"; S.tab="chat"; S.msgs=[]; S.menuOpen=false;
-  S.pyqYrs=[]; S.weakMap={}; S.strongMap={}; S.totalAsked=0; S.totalMCQ=0; S.totalCorrect=0;
-  saveProfile({board,medium,cls});
-  render();
+  S.board=board;S.medium=medium;S.cls=cls;S.lang=medium;
+  const c=cls;S.mcqCh=CHS[c][0];S.pyqCh=CHS[c][0];S.testCh=CHS[c][0];
+  S.sc="app";S.tab="chat";S.history=[];S.question="";S.menuOpen=false;
+  S.pyqYrs=[];S.weakMap={};S.strongMap={};S.totalAsked=0;S.totalMCQ=0;S.totalCorrect=0;
+  saveProf({board,medium,cls});render();
 }
-  
-// CHAT — no re-render on typing
+
+// System prompt — board AI professor with memory
+function sysPrompt(){
+  const isHi=L()==="hi";
+  return isHi
+    ?`Tum BoardAI ho — ek world-class professor jo NCERT, Bihar Board, CBSE ke sabse bade expert ho. Class ${S.cls} Science ke deepest expert.
+
+RULES:
+- Pichli baatein yaad rakho aur context use karo
+- Default: 3-5 lines, seedha jawab
+- Detail sirf jab user specifically maange
+- Formulas clearly likho: **F = ma** format mein
+- Numericals step-by-step
+- Non-science questions ke liye: "Main sirf Science ke sawaalon ka jawab deta hun."
+- Har jawab ke end mein: 💡 **Key point:** [ek line]
+- Hindi ya Hinglish mein jawab do`
+    :`You are BoardAI — world-class professor and expert in NCERT, Bihar Board, CBSE Science for Class ${S.cls}.
+
+RULES:
+- Remember the full conversation and use context
+- Default: 3-5 lines, straight to the point
+- Detail ONLY when user explicitly asks
+- Write formulas clearly in bold: **F = ma**
+- Numericals step by step with clear working
+- For non-science: "I only answer Science questions."
+- End every answer with: 💡 **Key point:** [one line]
+- Answer in English`;
+}
+
 async function sendChat(){
   const q=S.question.trim();
-  if(!q||S.chatLoading) return;
-  if(!canUse("chat")){ set({showPrem:true}); return; }
-  S.msgs=[...S.msgs,{r:"user",t:q}];
-  S.question=""; S.chatLoading=true; S.totalAsked++;
-  renderMsgs(); updateInput();
+  if(!q||S.loading) return;
+  if(!canUse("chat")){set({showPrem:true});return;}
+
+  // Add to history
+  S.history=[...S.history,{role:"user",content:q}];
+  S.question="";S.loading=true;S.totalAsked++;
+  renderChat();updateInput();
   await incUsage("chat");
+
   try{
-    const isHi=l()==="hi";
-    const p=isHi
-      ?`Tum BoardAI ho — world-class NCERT, Bihar Board, CBSE professor. Class ${S.cls} Science ke expert.
-Style: seedha point pe aao. Default: 3-5 lines. Detail sirf jab user maange.
-Formulas clearly likho. Numericals step-by-step. Non-science: "Sirf Science ke sawaalon ka jawab deta hun."
-Har jawab ke end mein: 💡 Key point: [ek line]
-Sawaal: ${q}`
-      :`You are BoardAI — world-class NCERT, Bihar Board, CBSE professor for Class ${S.cls} Science.
-Style: straight to the point. Default: 3-5 lines. Detail only when asked.
-Write formulas clearly. Numericals step by step. Non-science: "I only answer Science questions."
-End every answer with: 💡 Key point: [one line]
-Question: ${q}`;
-    const text=await ai(p);
-    S.msgs=[...S.msgs,{r:"ai",t:text}]; S.chatLoading=false; renderMsgs();
-  }catch(e){ S.msgs=[...S.msgs,{r:"ai",t:l()==="hi"?"Server error. Dobara try karein.":"Server error. Try again."}]; S.chatLoading=false; renderMsgs(); }
+    // Build messages with system prompt + full history for memory
+    const messages=[
+      {role:"system",content:sysPrompt()},
+      ...S.history
+    ];
+    const text=await ai(messages);
+    S.history=[...S.history,{role:"assistant",content:text}];
+    S.loading=false;renderChat();
+  }catch(e){
+    S.history=[...S.history,{role:"assistant",content:L()==="hi"?"Server error. Dobara try karein.":"Server error. Please try again."}];
+    S.loading=false;renderChat();
+  }
 }
 
 function appendChip(c){
-  const clean=c.replace(/[📝🔢🧮📖⚡🔑]/g,"").trim();
-  S.question=S.question+(S.question?" ":"")+clean;
-  const inp=document.getElementById("cInp"); if(inp){inp.value=S.question;inp.focus();}
+  S.question=(S.question+(S.question?" ":"")+c.replace(/[📝🔢🧮📖⚡🔑]/g,"").trim()).trim();
+  const el=document.getElementById("cInp");if(el){el.value=S.question;el.focus();}
   updateInput();
 }
-
-function setQ(q){ S.question=q; const inp=document.getElementById("cInp"); if(inp){inp.value=q;} updateInput(); }
-
+function setQ(q){S.question=q;const el=document.getElementById("cInp");if(el)el.value=q;updateInput();}
 function updateInput(){
-  const btn=document.getElementById("cBtn"); if(btn) btn.disabled=S.chatLoading||!S.question.trim();
-  const inp=document.getElementById("cInp"); if(inp&&inp.value!==S.question) inp.value=S.question;
+  const b=document.getElementById("cBtn");if(b)b.disabled=S.loading||!S.question.trim();
+  const i=document.getElementById("cInp");if(i&&i.value!==S.question)i.value=S.question;
 }
 
-function renderMsgs(){
-  const a=document.getElementById("chatArea"); if(!a) return;
-  if(S.msgs.length===0){
-    a.innerHTML=`<div class="flex flex-col items-center text-center py-8">
-      <div class="w-12 h-12 bg-slate-900 rounded-2xl flex items-center justify-center mb-3 text-2xl">🎓</div>
-      <div class="font-bold text-base mb-1">${l()==="hi"?"Koi bhi sawaal poochho":"Ask anything"}</div>
-      <div class="text-xs text-slate-400 mb-5">Class ${S.cls} • NCERT • ${l()==="hi"?"Professor level AI":"Professor level AI"}</div>
-      <div class="w-full flex flex-col gap-2">
-        ${(SAMPLES[S.cls]?.[l()]||[]).map(q=>`<button onclick="setQ('${q.replace(/'/g,"\\'")}  ')" class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-left text-slate-700">→ ${q}</button>`).join("")}
-      </div>
-    </div>`;
-    return;
-  }
-  a.innerHTML=S.msgs.map(m=>`<div class="flex ${m.r==="user"?"justify-end":"justify-start"} mb-2">
-    <div class="max-w-[88%]">
-      ${m.r==="ai"?`<div class="text-[10px] font-semibold text-slate-400 mb-1">🎓 BoardAI</div>`:""}
-      <div class="msg-bubble px-3.5 py-2.5 rounded-2xl text-sm leading-7 ${m.r==="user"?"bg-slate-900 text-white rounded-br-sm":"bg-slate-50 border border-slate-200 text-slate-900 rounded-bl-sm"}">${esc(m.t)}</div>
-    </div>
-  </div>`).join("")
-  +(S.chatLoading?`<div class="flex justify-start mb-2"><div class="bg-slate-50 border border-slate-200 rounded-2xl rounded-bl-sm px-4 py-3 flex gap-1.5"><div class="dot w-1.5 h-1.5 bg-slate-400 rounded-full"></div><div class="dot w-1.5 h-1.5 bg-slate-400 rounded-full"></div><div class="dot w-1.5 h-1.5 bg-slate-400 rounded-full"></div></div></div>`:"");
-  a.scrollTop=a.scrollHeight;
-}
+function clearChat(){S.history=[];set({},false);renderChat();}
 
-// MCQ — NO re-render on option select
+// ─── MCQ ───
 function selOpt(i,o){
   S.mcqAns={...S.mcqAns,[i]:o};
   document.querySelectorAll(`.og${i} button`).forEach((b,idx)=>{
     const k=["a","b","c","d"][idx];
-    b.className=`w-full text-left px-3 py-2.5 rounded-xl text-sm flex items-center gap-2 border transition-all ${k===o?"bg-slate-900 text-white border-slate-900":"bg-slate-50 text-slate-700 border-slate-200"}`;
+    b.className=`w-full text-left px-3.5 py-3 rounded-xl text-sm flex items-center gap-2.5 border-2 transition-all font-medium ${k===o?"bg-[#0f172a] text-white border-[#0f172a]":"bg-white text-[#434655] border-[#c3c6d7] hover:border-[#0f172a]"}`;
   });
   const sb2=document.getElementById("mcqSub");
-  if(sb2){ const c=Object.keys(S.mcqAns).length; sb2.textContent=`✓ Submit (${c}/${S.mcqs.length})`; const ok=c>=S.mcqs.length; sb2.disabled=!ok; sb2.className=`w-full py-3.5 rounded-xl font-bold text-sm mt-2 ${ok?"bg-slate-900 text-white":"bg-slate-200 text-slate-400 cursor-not-allowed"}`; }
-}
-
-function selTestOpt(i,o){
-  S.testAns={...S.testAns,[i]:o};
-  document.querySelectorAll(`.tg${i} button`).forEach((b,idx)=>{
-    const k=["a","b","c","d"][idx];
-    b.className=`w-full text-left px-3 py-2.5 rounded-xl text-sm flex items-center gap-2 border transition-all ${k===o?"bg-slate-900 text-white border-slate-900":"bg-slate-50 text-slate-700 border-slate-200"}`;
-  });
+  if(sb2){const c=Object.keys(S.mcqAns).length;const ok=c>=S.mcqs.length;sb2.disabled=!ok;sb2.textContent=`Submit Answers (${c}/${S.mcqs.length})`;sb2.className=`w-full py-3.5 rounded-xl font-bold text-sm mt-4 transition-all ${ok?"btn-dark":"bg-[#e0e3e5] text-[#737686] cursor-not-allowed"}`;}
 }
 
 async function genMCQ(){
-  if(!S.mcqCh||!canUse("mcq")){ if(!canUse("mcq")) set({showPrem:true}); return; }
+  if(!S.mcqCh||!canUse("mcq")){if(!canUse("mcq"))set({showPrem:true});return;}
   set({mcqs:[],mcqAns:{},mcqScore:null,mcqErr:"",mcqLoading:true});
   await incUsage("mcq");
   try{
-    const lang=l()==="hi"?"Hindi":"English";
-    const d=await aiJSON(`You are Bihar Board/CBSE Class ${S.cls} NCERT Science MCQ expert.
-Generate exactly ${S.mcqCnt} MCQ on "${S.mcqCh}" from NCERT. Explanations in ${lang}. Mark important ones.
-Return ONLY JSON: {"mcqs":[{"q":"question","a":"A","b":"B","c":"C","d":"D","ans":"a","exp":"explanation","important":false}]}`);
+    const lang=L()==="hi"?"Hindi":"English";
+    const d=await aiJSON(`You are Bihar Board/CBSE Class ${S.cls} NCERT Science MCQ expert professor.
+Generate exactly ${S.mcqCnt} high-quality MCQ on "${S.mcqCh}" from NCERT Class ${S.cls}. Explanations in ${lang}. Mark frequently-asked ones.
+Return ONLY valid JSON (no markdown):
+{"mcqs":[{"q":"question","a":"Option A","b":"Option B","c":"Option C","d":"Option D","ans":"a","exp":"brief explanation in ${lang}","important":false}]}`);
     if(!d.mcqs?.length) throw new Error("empty");
     set({mcqs:d.mcqs,mcqLoading:false});
-  }catch(e){ set({mcqErr:l()==="hi"?"MCQ nahi bana. Dobara try karein.":"Could not generate MCQ.",mcqLoading:false}); }
+  }catch(e){set({mcqErr:L()==="hi"?"MCQ generate nahi hua. Dobara try karein.":"Could not generate MCQ. Try again.",mcqLoading:false});}
 }
 
 function submitMCQ(){
-  let c=0; S.mcqs.forEach((m,i)=>{ if(S.mcqAns[i]===m.ans) c++; });
+  let c=0;S.mcqs.forEach((m,i)=>{if(S.mcqAns[i]===m.ans)c++;});
   const r=c/S.mcqs.length,ch=S.mcqCh;
   set({mcqScore:{c,total:S.mcqs.length},totalMCQ:S.totalMCQ+S.mcqs.length,totalCorrect:S.totalCorrect+c,
     strongMap:r>=0.6?{...S.strongMap,[ch]:(S.strongMap[ch]||0)+1}:S.strongMap,
     weakMap:r<0.6?{...S.weakMap,[ch]:(S.weakMap[ch]||0)+1}:S.weakMap});
 }
 
+// ─── PYQ ───
 async function fetchPYQ(){
-  if(!S.pyqCh||!S.pyqYrs.length||!canUse("pyq")){ if(!canUse("pyq")) set({showPrem:true}); return; }
+  if(!S.pyqCh||!S.pyqYrs.length||!canUse("pyq")){if(!canUse("pyq"))set({showPrem:true});return;}
   set({pyqs:[],pyqRev:{},pyqErr:"",pyqLoading:true});
   await incUsage("pyq");
   try{
-    const lang=l()==="hi"?"Hindi":"English"; const board=S.board==="bihar"?"Bihar Board":"CBSE";
-    const d=await aiJSON(`Find real previous year questions from ${board} Class ${S.cls} Science for "${S.pyqCh}" from years: ${S.pyqYrs.join(", ")}.
-Answers in ${lang}. Return ONLY JSON: {"pyqs":[{"year":2023,"q":"question","marks":2,"ans":"answer","tip":"tip","repeated":false}]}`);
+    const lang=L()==="hi"?"Hindi":"English";const board=S.board==="bihar"?"Bihar Board (BSEB)":"CBSE";
+    const d=await aiJSON(`You are an expert in ${board} Class ${S.cls} Science previous year exam papers.
+Find real previous year questions from ${board} Class ${S.cls} Science for "${S.pyqCh}" from years: ${S.pyqYrs.join(", ")}.
+Provide accurate answers based on NCERT. Mark questions that appeared multiple times as repeated. Answers in ${lang}.
+Return ONLY valid JSON:
+{"pyqs":[{"year":2023,"q":"exact question text","marks":2,"ans":"complete model answer","tip":"exam writing tip","repeated":false}]}`);
     if(!d.pyqs?.length) throw new Error("empty");
     set({pyqs:d.pyqs,pyqLoading:false});
-  }catch(e){ set({pyqErr:l()==="hi"?"PYQ nahi mila.":"Could not find PYQ.",pyqLoading:false}); }
+  }catch(e){set({pyqErr:L()==="hi"?"PYQ nahi mila. Dobara try karein.":"Could not find PYQ. Try again.",pyqLoading:false});}
 }
 
 function toggleYr(y){
   S.pyqYrs=S.pyqYrs.includes(y)?S.pyqYrs.filter(x=>x!==y):[...S.pyqYrs,y];
-  document.querySelectorAll(".yrpill").forEach(el=>{
+  document.querySelectorAll(".yrp").forEach(el=>{
     const yr=parseInt(el.dataset.yr);
-    el.className=`yrpill px-3 py-1.5 rounded-full text-xs font-semibold border cursor-pointer ${S.pyqYrs.includes(yr)?"bg-slate-900 text-white border-slate-900":"bg-slate-50 text-slate-600 border-slate-200"}`;
+    el.className=`yrp px-3 py-1.5 rounded-full text-xs font-semibold border-2 cursor-pointer transition-all ${S.pyqYrs.includes(yr)?"bg-[#0f172a] text-white border-[#0f172a]":"bg-white text-[#434655] border-[#c3c6d7] hover:border-[#0f172a]"}`;
   });
-  const btn=document.getElementById("pyqBtn"); if(btn) btn.disabled=S.pyqYrs.length===0;
+  const btn=document.getElementById("pyqBtn");if(btn)btn.disabled=!S.pyqYrs.length;
 }
 
 function revPYQ(i){
   S.pyqRev={...S.pyqRev,[i]:true};
-  const el=document.getElementById(`pyqans${i}`);
-  if(el) el.innerHTML=`<div class="bg-green-50 border border-green-200 rounded-xl p-3 text-green-800 text-sm leading-relaxed">✅ ${esc(S.pyqs[i].ans)}</div>${S.pyqs[i].tip?`<div class="text-xs text-slate-400 mt-1.5">💡 ${esc(S.pyqs[i].tip)}</div>`:""}`;
+  const el=document.getElementById(`pyqA${i}`);
+  if(el) el.innerHTML=`<div class="mt-3 p-3.5 bg-[#f0fdf4] border-2 border-[#bbf7d0] rounded-xl text-sm text-[#166534] leading-relaxed">${esc(S.pyqs[i].ans)}</div>${S.pyqs[i].tip?`<div class="mt-2 text-xs text-[#737686] flex items-center gap-1.5">💡 <span>${esc(S.pyqs[i].tip)}</span></div>`:""}`;
+  }
+  
+// ─── TEST ───
+function selTestOpt(i,o){
+  S.testAns={...S.testAns,[i]:o};
+  document.querySelectorAll(`.tg${i} button`).forEach((b,idx)=>{
+    const k=["a","b","c","d"][idx];
+    b.className=`w-full text-left px-3.5 py-3 rounded-xl text-sm flex items-center gap-2.5 border-2 transition-all font-medium ${k===o?"bg-[#0f172a] text-white border-[#0f172a]":"bg-white text-[#434655] border-[#c3c6d7] hover:border-[#0f172a]"}`;
+  });
 }
 
 async function startTest(){
-  if(!S.testCh||!canUse("test")){ if(!canUse("test")) set({showPrem:true}); return; }
+  if(!S.testCh||!canUse("test")){if(!canUse("test"))set({showPrem:true});return;}
   set({testQs:[],testAns:{},testScore:null,testLoading:true,testRunning:false});
   await incUsage("test");
   try{
-    const lang=l()==="hi"?"Hindi":"English";
+    const lang=L()==="hi"?"Hindi":"English";
     const d=await aiJSON(`Generate ${S.testCnt} MCQ on "${S.testCh}" Class ${S.cls} NCERT Science. Explanations in ${lang}.
-Return ONLY JSON: {"mcqs":[{"q":"q","a":"A","b":"B","c":"C","d":"D","ans":"a","exp":"exp","important":false}]}`);
+Return ONLY JSON: {"mcqs":[{"q":"q","a":"A","b":"B","c":"C","d":"D","ans":"a","exp":"explanation","important":false}]}`);
     if(!d.mcqs?.length) throw new Error("empty");
     const secs=S.testCnt*90;
     if(S.testIv) clearInterval(S.testIv);
     const iv=setInterval(()=>{
-      if(S.testTimer<=1){ clearInterval(iv); submitTest(); }
-      else{ S.testTimer--; const tv=document.getElementById("tvl"); if(tv) tv.textContent=fmtT(S.testTimer); }
+      if(S.testTimer<=1){clearInterval(iv);submitTest();}
+      else{S.testTimer--;const el=document.getElementById("tvl");if(el)el.textContent=fmtT(S.testTimer);}
     },1000);
     set({testQs:d.mcqs,testLoading:false,testRunning:true,testTimer:secs,testIv:iv});
-  }catch(e){ set({testLoading:false}); }
+  }catch(e){set({testLoading:false});}
 }
 
 function submitTest(){
-  if(S.testIv) clearInterval(S.testIv);
-  let c=0; S.testQs.forEach((m,i)=>{ if(S.testAns[i]===m.ans) c++; });
+  if(S.testIv)clearInterval(S.testIv);
+  let c=0;S.testQs.forEach((m,i)=>{if(S.testAns[i]===m.ans)c++;});
   const r=c/S.testQs.length,ch=S.testCh;
   set({testScore:{c,total:S.testQs.length},testRunning:false,testIv:null,
     totalMCQ:S.totalMCQ+S.testQs.length,totalCorrect:S.totalCorrect+c,
@@ -344,439 +365,529 @@ function submitTest(){
     weakMap:r<0.6?{...S.weakMap,[ch]:(S.weakMap[ch]||0)+1}:S.weakMap});
 }
 
+// ─── PREDICTOR ───
 async function runPredictor(){
-  if(!canUse("predict")){ set({showPrem:true}); return; }
-  const chapter=document.getElementById("predSel")?.value||chs()[0];
+  if(!canUse("predict")){set({showPrem:true});return;}
+  const ch=document.getElementById("predSel")?.value||chs()[0];
   set({predLoading:true,prediction:"",predErr:""});
   await incUsage("predict");
   try{
-    const isHi=l()==="hi"; const board=S.board==="bihar"?"Bihar Board":"CBSE";
-    const text=await ai(isHi
-      ?`Tum ${board} Class ${S.cls} Science exam analyst ho. "${chapter}" chapter ke liye pichle 10 saalon ka pattern analyze karo. Batao: 1.🔴 Most likely topics 2.🟡 Moderate probability 3.📝 Expected marks 4.🔄 Repeated topics 5.💡 Special tip`
-      :`You are ${board} Class ${S.cls} Science exam analyst. Analyze last 10 years pattern for "${chapter}". Tell: 1.🔴 Most likely topics 2.🟡 Moderate probability 3.📝 Expected marks 4.🔄 Repeated topics 5.💡 Special tip`);
-    set({prediction:text,predCh:chapter,predLoading:false});
-  }catch(e){ set({predErr:"Error. Try again.",predLoading:false}); }
+    const isHi=L()==="hi";const board=S.board==="bihar"?"Bihar Board":"CBSE";
+    const text=await aiSimple(isHi
+      ?`Tum ${board} Class ${S.cls} Science ke expert exam analyst ho. "${ch}" chapter ke liye pichle 10 saalon ka pattern analyze karo. Batao: 1.🔴 Zaroor aane wale topics 2.🟡 Possible topics 3.📝 Expected marks 4.🔄 Baar baar aaye topics 5.💡 Is saal ke liye special tip`
+      :`You are ${board} Class ${S.cls} Science exam analyst. Analyze "${ch}" for last 10 years. Give: 1.🔴 Must-come topics 2.🟡 Probable topics 3.📝 Expected marks 4.🔄 Repeatedly asked topics 5.💡 Special tip for this year`);
+    set({prediction:text,predLoading:false});
+  }catch(e){set({predErr:"Error. Try again.",predLoading:false});}
 }
 
-function setPTab(t){
-  S.practiceTab=t;
-  ["mcq","pyq","test"].forEach(x=>{ const el=document.getElementById(`pt${x}`); if(el) el.style.display=x===t?"block":"none"; });
-  document.querySelectorAll(".ptab").forEach(b=>{ b.className=`ptab flex-1 py-2.5 text-xs font-semibold text-center cursor-pointer border-b-2 ${b.dataset.t===t?"border-slate-900 text-slate-900":"border-transparent text-slate-400"}`; });
+// ─── RENDER CHAT (no full re-render) ───
+function renderChat(){
+  const a=document.getElementById("chatArea");if(!a)return;
+  const isHi=L()==="hi";
+  const chips=isHi
+    ?["📝 Short mein","🔢 Formula","🧮 Numerical","📖 Detail mein","⚡ Example","🔑 Key points"]
+    :["📝 Brief answer","🔢 Show formula","🧮 Solve numerical","📖 Explain fully","⚡ Give example","🔑 Key points"];
+
+  if(S.history.length===0){
+    a.innerHTML=`<div class="flex flex-col items-center text-center py-10 fadeUp">
+      <div class="w-16 h-16 bg-[#0f172a] rounded-2xl flex items-center justify-center mb-4 shadow-lg">
+        <span class="text-3xl">🎓</span>
+      </div>
+      <h2 class="text-xl font-bold text-[#191c1e] mb-1">${isHi?"Koi bhi sawaal poochho":"Ask anything"}</h2>
+      <p class="text-sm text-[#737686] mb-6">Class ${S.cls} • NCERT • ${isHi?"Professor level AI":"Professor level AI"}</p>
+      <div class="w-full max-w-xs flex flex-col gap-2.5">
+        ${(SAMPLES[S.cls]?.[L()]||[]).map(q=>`<button onclick="setQ('${q.replace(/'/g,"\\'")} ')" class="card px-4 py-3 text-sm text-left text-[#191c1e] hover:border-[#2563eb] hover:bg-[#eff6ff] transition-all">
+          <span class="text-[#2563eb] mr-2">→</span>${q}
+        </button>`).join("")}
+      </div>
+    </div>`;
+  }else{
+    a.innerHTML=S.history.map((m,idx)=>{
+      const isUser=m.role==="user";
+      // Format markdown-like bold
+      const formatted=esc(m.content).replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+      return`<div class="flex ${isUser?"justify-end":"justify-start"} mb-4 fadeUp">
+        ${!isUser?`<div class="w-8 h-8 rounded-xl bg-[#0f172a] flex items-center justify-center text-sm mr-2.5 flex-shrink-0 mt-0.5">🎓</div>`:""}
+        <div class="max-w-[82%]">
+          ${!isUser?`<div class="text-[10px] font-bold text-[#737686] mb-1.5 tracking-wide uppercase">BoardAI</div>`:""}
+          <div class="msg px-4 py-3 rounded-2xl text-[13.5px] leading-[1.8] shadow-sm ${isUser?"bg-[#0f172a] text-white rounded-br-sm":"bg-white text-[#191c1e] border border-[#e0e3e5] rounded-bl-sm"}">${formatted}</div>
+        </div>
+        ${isUser?`<div class="w-8 h-8 rounded-xl bg-[#2563eb] flex items-center justify-center text-white text-xs font-bold ml-2.5 flex-shrink-0 mt-0.5">${(S.user?.user_metadata?.name||"U")[0].toUpperCase()}</div>`:""}
+      </div>`;
+    }).join("")
+    +(S.loading?`<div class="flex justify-start mb-4">
+      <div class="w-8 h-8 rounded-xl bg-[#0f172a] flex items-center justify-center text-sm mr-2.5 flex-shrink-0">🎓</div>
+      <div class="bg-white border border-[#e0e3e5] rounded-2xl rounded-bl-sm px-5 py-4 flex gap-2 items-center shadow-sm">
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+      </div>
+    </div>`:"");
+    a.scrollTop=a.scrollHeight;
   }
-  
-// ── RENDER ──
+}
+
+// ─── MAIN RENDER ───
 function render(){
-  const root=document.getElementById("root");
-  if(S.screen==="landing"){ root.innerHTML=renderLanding(); return; }
-  if(S.screen==="boardSelect"){ root.innerHTML=renderBoardSelect(); return; }
-  if(S.screen==="mediumSelect"){ root.innerHTML=renderMediumSelect(); return; }
-  if(S.screen==="classSelect"){ root.innerHTML=renderClassSelect(); return; }
-  root.innerHTML=renderApp();
-  // bind chat
+  const root=document.getElementById("app");
+  if(S.sc==="landing"){root.innerHTML=rLanding();return;}
+  if(S.sc==="boardSelect"){root.innerHTML=rBoardSel();return;}
+  if(S.sc==="mediumSelect"){root.innerHTML=rMedSel();return;}
+  if(S.sc==="classSelect"){root.innerHTML=rClsSel();return;}
+  root.innerHTML=rApp();
+  // bind chat input
   const inp=document.getElementById("cInp");
   if(inp){
     inp.value=S.question;
-    inp.oninput=e=>{ S.question=e.target.value; updateInput(); };
-    inp.onkeydown=e=>{ if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendChat();} };
-    updateInput(); renderMsgs();
+    inp.oninput=e=>{S.question=e.target.value;updateInput();};
+    inp.onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendChat();}};
+    updateInput();renderChat();
   }
 }
 
-// ── LANDING ──
-function renderLanding(){
-  const ln=l();
-  return`<div class="min-h-screen bg-white">
-  <!-- Nav -->
-  <nav class="fixed top-0 w-full z-50 bg-white/90 backdrop-blur border-b border-slate-100">
+// ─── LANDING ───
+function rLanding(){
+  const ln=L();
+  return`<div class="min-h-screen" style="background:#f7f9fb">
+  <nav class="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-[#e0e3e5] shadow-sm">
     <div class="flex justify-between items-center px-5 h-14">
-      <div class="text-xl font-black text-blue-600">BoardAI</div>
-      <div class="flex items-center gap-1 bg-slate-100 rounded-full p-1">
-        <button onclick="set({lang:'en'})" class="px-3 py-1 rounded-full text-xs font-semibold ${ln==="en"?"bg-white text-slate-900 shadow":"text-slate-500"}">English</button>
-        <button onclick="set({lang:'hi'})" class="px-3 py-1 rounded-full text-xs font-semibold ${ln==="hi"?"bg-white text-slate-900 shadow":"text-slate-500"}">हिंदी</button>
+      <div class="text-xl font-black" style="color:#2563eb">BoardAI</div>
+      <div class="flex items-center gap-1 rounded-full p-1" style="background:#eceef0">
+        <button onclick="set({lang:'en'})" class="px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${ln==="en"?"bg-white text-[#191c1e] shadow":"text-[#737686]"}">English</button>
+        <button onclick="set({lang:'hi'})" class="px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${ln==="hi"?"bg-white text-[#191c1e] shadow":"text-[#737686]"}">हिंदी</button>
       </div>
       <div class="flex gap-2 items-center">
-        <button onclick="googleLogin()" class="text-sm font-semibold text-slate-500">Login</button>
-        <button onclick="set({screen:'boardSelect'})" class="px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-xl">Start Free</button>
+        ${S.user
+          ?`<button onclick="set({sc:'app'})" class="px-4 py-2 text-sm font-bold rounded-xl text-white btn-primary">Go to App →</button>`
+          :`<button onclick="gLogin()" class="text-sm font-semibold text-[#434655]">Login</button>
+           <button onclick="set({sc:'boardSelect'})" class="px-4 py-2 text-sm font-bold rounded-xl text-white btn-primary">Start Free</button>`}
       </div>
     </div>
   </nav>
-  <div class="pt-14">
-  <!-- Hero -->
-  <section class="px-5 py-16 text-center">
-    <span class="inline-block bg-blue-50 text-blue-600 text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider mb-4">Expert AI Mentorship</span>
-    <h1 class="text-4xl font-black leading-tight mb-4"><span class="text-blue-600">${ln==="hi"?"Board Exam mein Top Karo":"Top Your Board Exam"}</span><br>${ln==="hi"?"AI ke saath":"with AI"}</h1>
-    <p class="text-slate-500 text-sm mb-8 max-w-xs mx-auto">${ln==="hi"?"Bihar Board & CBSE ke liye NCERT-focused AI. MCQ, PYQ, Test, Predictor — sab ek jagah.":"NCERT-focused AI for Bihar Board & CBSE. MCQ, PYQ, Test, Predictor — all in one."}</p>
-    <div class="flex flex-col gap-3 max-w-xs mx-auto">
-      <button onclick="set({screen:'boardSelect'})" class="w-full py-4 bg-blue-600 text-white font-bold rounded-2xl text-sm shadow-lg shadow-blue-200">🚀 ${ln==="hi"?"Free mein Shuru Karein":"Get Started Free"}</button>
-      <button onclick="googleLogin()" class="w-full py-3.5 bg-white border-2 border-slate-200 text-slate-700 font-semibold rounded-2xl text-sm flex items-center justify-center gap-2">
-        <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-        ${ln==="hi"?"Google se Login":"Login with Google"}
-      </button>
-    </div>
-  </section>
-  <!-- Board -->
-  <section class="px-5 py-10 bg-slate-50">
-    <h2 class="text-lg font-bold text-center mb-5">${ln==="hi"?"Board Chuniye":"Choose Your Board"}</h2>
-    <div class="grid grid-cols-2 gap-4 max-w-sm mx-auto">
-      <button onclick="S.board='bihar';set({screen:'mediumSelect'})" class="bg-white border-2 border-slate-200 rounded-2xl p-6 text-center hover:border-blue-400 active:bg-blue-50">
-        <div class="text-3xl mb-2">🏫</div><div class="font-bold text-sm">Bihar Board</div><div class="text-xs text-slate-400 mt-1">BSEB • 10, 11, 12</div>
-      </button>
-      <button onclick="S.board='cbse';S.medium='en';set({screen:'classSelect'})" class="bg-white border-2 border-slate-200 rounded-2xl p-6 text-center hover:border-blue-400 active:bg-blue-50">
-        <div class="text-3xl mb-2">📘</div><div class="font-bold text-sm">CBSE</div><div class="text-xs text-slate-400 mt-1">English • 10, 11, 12</div>
-      </button>
-    </div>
-  </section>
-  <!-- Features -->
-  <section class="px-5 py-10">
-    <h2 class="text-lg font-bold text-center mb-5">${ln==="hi"?"Kya milega BoardAI mein?":"What's inside BoardAI?"}</h2>
-    <div class="flex flex-col gap-3 max-w-sm mx-auto">
-      ${[["🤖","AI Chat Tutor",ln==="hi"?"Professor level NCERT jawab":"Professor level NCERT answers"],["📝","MCQ Generator",ln==="hi"?"Chapter chuniye, instantly MCQs":"Select chapter, generate MCQs instantly"],["📜","PYQ Finder",ln==="hi"?"Real board exam questions":"Real board exam questions"],["🧪","Timed Test Mode",ln==="hi"?"Timer ke saath full test":"Full chapter test with timer"],["🔮","Exam Predictor",ln==="hi"?"AI batayega is saal kya aayega":"AI predicts what's coming this year"],["📊","Performance Analysis",ln==="hi"?"Weak/Strong topics track karo":"Track weak and strong topics"]].map(([ic,t,d])=>`
-      <div class="flex items-center gap-4 bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
-        <div class="text-2xl w-10 text-center flex-shrink-0">${ic}</div>
-        <div><div class="font-semibold text-sm">${t}</div><div class="text-xs text-slate-400 mt-0.5">${d}</div></div>
-      </div>`).join("")}
-    </div>
-  </section>
-  <!-- How -->
-  <section class="px-5 py-10 bg-slate-50">
-    <h2 class="text-lg font-bold text-center mb-5">${ln==="hi"?"Kaise kaam karta hai?":"How does it work?"}</h2>
-    <div class="flex flex-col gap-4 max-w-sm mx-auto">
-      ${(ln==="hi"?["Board aur Class chuniye","AI se koi bhi Science sawaal poochho","MCQ aur PYQ se practice karein","Analysis se weak points pakdo"]:["Select Board and Class","Ask AI any Science question","Practice with MCQ and PYQ","Track weak areas with Analysis"]).map((s,i)=>`
-      <div class="flex items-start gap-4"><div class="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0">${i+1}</div><div class="text-sm text-slate-600 pt-1.5">${s}</div></div>`).join("")}
-    </div>
-  </section>
-  <!-- Testimonials -->
-  <section class="px-5 py-10">
-    <h2 class="text-lg font-bold text-center mb-5">${ln==="hi"?"Students kya bol rahe hain":"What students say"}</h2>
-    <div class="flex flex-col gap-3 max-w-sm mx-auto">
-      <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4"><p class="text-sm text-slate-700">"${ln==="hi"?"MCQ generator ne preparation 2x fast kar di. Ekdum accurate!":"MCQ generator made my prep 2x faster. Very accurate!"}"</p><p class="text-xs text-slate-400 mt-2 font-semibold">— Rahul Kumar, Class 10 Bihar Board</p></div>
-      <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4"><p class="text-sm text-slate-700">"${ln==="hi"?"PYQ mein exactly wahi question mila jo exam mein aaya!":"Found the exact question in PYQ that came in my exam!"}"</p><p class="text-xs text-slate-400 mt-2 font-semibold">— Priya Sharma, Class 12 CBSE</p></div>
-    </div>
-  </section>
-  <!-- Pricing -->
-  <section class="px-5 py-10 bg-slate-50">
-    <h2 class="text-lg font-bold text-center mb-1">${ln==="hi"?"Plans":"Pricing"}</h2>
-    <p class="text-center text-slate-400 text-xs mb-6">${ln==="hi"?"Free se shuru, zaroori lage tab upgrade":"Start free, upgrade anytime"}</p>
-    <div class="flex flex-col gap-3 max-w-sm mx-auto">
-      <div class="bg-white border border-slate-200 rounded-2xl p-5"><div class="font-bold">Free</div><div class="text-2xl font-black text-blue-600 my-1">₹0<span class="text-sm font-normal text-slate-400">/month</span></div><ul class="space-y-1 mt-2">${["10 AI chats/day","3 MCQ sessions","3 PYQ sessions","2 Test sessions"].map(f=>`<li class="text-xs text-slate-500 flex items-center gap-2"><span class="text-blue-500">✓</span>${f}</li>`).join("")}</ul></div>
-      <div class="bg-white border-2 border-blue-600 rounded-2xl p-5 relative"><span class="absolute -top-3 left-4 bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded-full">POPULAR</span><div class="font-bold">Basic</div><div class="text-2xl font-black text-blue-600 my-1">₹49<span class="text-sm font-normal text-slate-400">/month</span></div><div class="text-xs text-slate-400 mb-2">2-5× more than free</div><ul class="space-y-1 mb-4">${["Unlimited AI Chat","MCQ Generator","Study Notes"].map(f=>`<li class="text-xs text-slate-500 flex items-center gap-2"><span class="text-blue-500">✓</span>${f}</li>`).join("")}</ul><button onclick="openPayment(49)" class="w-full py-3 bg-blue-600 text-white font-bold rounded-xl text-sm">Get Started</button></div>
-      <div class="bg-white border border-slate-200 rounded-2xl p-5"><div class="font-bold">Popular ⭐</div><div class="text-2xl font-black text-blue-600 my-1">₹99<span class="text-sm font-normal text-slate-400">/month</span></div><div class="text-xs text-slate-400 mb-2">10-20× more than free</div><ul class="space-y-1 mb-4">${["Everything in Basic","PYQ Finder","Timed Tests","Exam Predictor","Analysis"].map(f=>`<li class="text-xs text-slate-500 flex items-center gap-2"><span class="text-blue-500">✓</span>${f}</li>`).join("")}</ul><button onclick="openPayment(99)" class="w-full py-3 bg-slate-900 text-white font-bold rounded-xl text-sm">Go Popular</button></div>
-      <div class="bg-slate-900 rounded-2xl p-5"><div class="font-bold text-white">Pro — Full Power</div><div class="text-2xl font-black text-white my-1">₹149<span class="text-sm font-normal text-slate-400">/month</span></div><div class="text-xs text-slate-400 mb-2">Unlimited Everything • Fastest AI • Priority Access</div><ul class="space-y-1 mb-4">${["Unlimited Everything","Priority AI Response","Advanced Analytics","PDF Downloads","Expert Support"].map(f=>`<li class="text-xs text-slate-400 flex items-center gap-2"><span class="text-blue-400">✓</span>${f}</li>`).join("")}</ul><button onclick="openPayment(149)" class="w-full py-3 bg-white text-slate-900 font-bold rounded-xl text-sm">Go Pro</button></div>
-    </div>
-  </section>
-  <div class="px-5 py-8"><button onclick="set({screen:'boardSelect'})" class="w-full py-4 bg-blue-600 text-white font-bold rounded-2xl text-sm shadow-lg shadow-blue-200">🚀 ${ln==="hi"?"Abhi Shuru Karein — Free":"Start Now — Free"}</button></div>
-  <footer class="bg-slate-900 text-white py-8 px-5"><div class="font-black text-xl text-blue-400 mb-2">BoardAI</div><p class="text-slate-400 text-xs mb-4">Empowering learners through AI.</p><div class="text-center text-slate-500 text-xs mt-4">© 2025 BoardAI</div></footer>
-  </div></div>`;
-}
- 
-// ── SELECT SCREENS ──
-function renderBoardSelect(){
-  return`<div class="min-h-screen flex flex-col items-center justify-center p-6 bg-white">
-    <button onclick="set({screen:'landing'})" class="self-start mb-6 text-sm text-slate-500 border border-slate-200 rounded-lg px-3 py-2">← Back</button>
-    <div class="text-2xl font-black text-blue-600 mb-1">BoardAI</div>
-    <div class="text-slate-400 text-sm mb-8">${l()==="hi"?"Board Chuniye":"Select Your Board"}</div>
+  <main class="pt-14">
+    <!-- HERO -->
+    <section class="px-5 py-16 text-center">
+      <span class="inline-block text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-widest mb-5" style="background:#dbe1ff;color:#003ea8">Expert AI Mentorship</span>
+      <h1 class="text-4xl font-black leading-tight mb-4" style="letter-spacing:-0.02em">
+        <span style="color:#2563eb">${ln==="hi"?"Board Exam mein":"Top Your"}</span><br>${ln==="hi"?"Top Karo":"Board Exam"}<br><span style="color:#0f172a">${ln==="hi"?"AI ke saath":"with AI"}</span>
+      </h1>
+      <p class="text-sm mb-8 max-w-xs mx-auto leading-relaxed" style="color:#737686">${ln==="hi"?"Bihar Board & CBSE ke liye NCERT-focused AI. MCQ, PYQ, Test, Predictor — sab ek jagah.":"NCERT-focused AI for Bihar Board & CBSE. MCQ, PYQ, Test, Predictor — all in one."}</p>
+      <div class="flex flex-col gap-3 max-w-xs mx-auto">
+        <button onclick="set({sc:'boardSelect'})" class="w-full py-4 font-bold rounded-2xl text-white text-sm btn-primary shadow-lg" style="box-shadow:0 8px 24px rgba(37,99,235,.3)">🚀 ${ln==="hi"?"Free mein Shuru Karein":"Get Started Free"}</button>
+        <button onclick="gLogin()" class="w-full py-3.5 font-semibold rounded-2xl text-sm flex items-center justify-center gap-2 card hover:border-[#2563eb]" style="color:#0f172a">
+          <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          ${ln==="hi"?"Google se Login karein":"Continue with Google"}
+        </button>
+      </div>
+    </section>
+    <!-- BOARD SELECT ON HOMEPAGE -->
+    <section class="px-5 py-10" style="background:#fff">
+      <h2 class="text-lg font-bold text-center mb-5" style="color:#191c1e">${ln==="hi"?"Board Chuniye":"Choose Your Board"}</h2>
+      <div class="grid grid-cols-2 gap-4 max-w-sm mx-auto">
+        <button onclick="S.board='bihar';set({sc:'mediumSelect'})" class="card p-6 text-center hover:border-[#2563eb] hover:bg-[#eff6ff] transition-all">
+          <div class="text-3xl mb-2">🏫</div><div class="font-bold text-sm">Bihar Board</div><div class="text-xs mt-1" style="color:#737686">BSEB • 10, 11, 12</div>
+        </button>
+        <button onclick="S.board='cbse';S.medium='en';set({sc:'classSelect'})" class="card p-6 text-center hover:border-[#2563eb] hover:bg-[#eff6ff] transition-all">
+          <div class="text-3xl mb-2">📘</div><div class="font-bold text-sm">CBSE</div><div class="text-xs mt-1" style="color:#737686">English • 10, 11, 12</div>
+        </button>
+      </div>
+    </section>
+    <!-- FEATURES -->
+    <section class="px-5 py-10" style="background:#f7f9fb">
+      <h2 class="text-lg font-bold text-center mb-6" style="color:#191c1e">${ln==="hi"?"Kya milega BoardAI mein?":"What's inside BoardAI?"}</h2>
+      <div class="flex flex-col gap-3 max-w-sm mx-auto">
+        ${[["🤖","AI Chat Tutor",ln==="hi"?"Professor level NCERT jawab — context yaad rehta hai":"Professor level answers — remembers your conversation"],["📝","MCQ Generator",ln==="hi"?"Chapter chuniye, 20-50 MCQ instantly":"Select chapter, generate 20-50 MCQs instantly"],["📜","PYQ Finder",ln==="hi"?"Real board exam questions 2015-2025":"Real board exam questions 2015-2025"],["🧪","Timed Test",ln==="hi"?"Timer ke saath full chapter test":"Full chapter test with live countdown"],["🔮","Exam Predictor",ln==="hi"?"AI batayega is saal kya aane ki sambhavana hai":"AI predicts what's coming this year"],["📊","Analysis",ln==="hi"?"Weak/Strong topics track karo":"Track weak and strong topics over time"]].map(([ic,t,d])=>`
+        <div class="card flex items-center gap-4 p-4">
+          <div class="text-2xl w-10 text-center flex-shrink-0">${ic}</div>
+          <div><div class="font-semibold text-sm" style="color:#191c1e">${t}</div><div class="text-xs mt-0.5" style="color:#737686">${d}</div></div>
+        </div>`).join("")}
+      </div>
+    </section>
+    <!-- HOW IT WORKS -->
+    <section class="px-5 py-10" style="background:#fff">
+      <h2 class="text-lg font-bold text-center mb-6">${ln==="hi"?"Kaise kaam karta hai?":"How does it work?"}</h2>
+      <div class="flex flex-col gap-4 max-w-sm mx-auto">
+        ${(ln==="hi"?["Board, Medium aur Class chuniye","AI se koi bhi Science sawaal poochho — context yaad rehta hai","MCQ aur PYQ se practice karein","Analysis se weak points pakdo aur improve karo"]:["Select Board, Medium and Class","Ask AI any Science question — it remembers context","Practice with MCQ and PYQ","Track weak areas with Analysis and improve"]).map((s,i)=>`
+        <div class="flex items-start gap-4">
+          <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm text-white flex-shrink-0" style="background:#2563eb;margin-top:2px">${i+1}</div>
+          <div class="text-sm leading-relaxed pt-1.5" style="color:#434655">${s}</div>
+        </div>`).join("")}
+      </div>
+    </section>
+    <!-- TESTIMONIALS -->
+    <section class="px-5 py-10" style="background:#f7f9fb">
+      <h2 class="text-lg font-bold text-center mb-5">${ln==="hi"?"Students kya bol rahe hain":"What students say"}</h2>
+      <div class="flex flex-col gap-3 max-w-sm mx-auto">
+        <div class="card p-4"><p class="text-sm leading-relaxed" style="color:#191c1e">"${ln==="hi"?"MCQ generator ne preparation 2x fast kar di. AI ka jawab ekdum clear hota hai!":"MCQ generator made my prep 2x faster. The AI answers are crystal clear!"}"</p><p class="text-xs mt-2 font-semibold" style="color:#737686">— Rahul Kumar, Class 10 Bihar Board</p></div>
+        <div class="card p-4"><p class="text-sm leading-relaxed" style="color:#191c1e">"${ln==="hi"?"PYQ section mein exactly wahi question mila jo exam mein aaya. Kamal hai!":"Found the exact question in PYQ that came in my exam. Amazing!"}"</p><p class="text-xs mt-2 font-semibold" style="color:#737686">— Priya Sharma, Class 12 CBSE</p></div>
+      </div>
+    </section>
+    <!-- PRICING -->
+    <section class="px-5 py-10" style="background:#fff">
+      <h2 class="text-lg font-bold text-center mb-1">${ln==="hi"?"Plans":"Pricing"}</h2>
+      <p class="text-center text-xs mb-6" style="color:#737686">${ln==="hi"?"Free se shuru, upgrade karo jab chahiye":"Start free, upgrade anytime"}</p>
+      <div class="flex flex-col gap-3 max-w-sm mx-auto">
+        <div class="card p-5"><div class="font-bold">Free</div><div class="text-3xl font-black my-2" style="color:#2563eb">₹0<span class="text-sm font-normal" style="color:#737686">/month</span></div><ul class="space-y-1.5">${["10 AI chats/day (hidden limit)","3 MCQ sessions","3 PYQ sessions","2 Test sessions"].map(f=>`<li class="text-xs flex items-center gap-2" style="color:#434655"><span style="color:#2563eb">✓</span>${f}</li>`).join("")}</ul></div>
+        <div class="p-5 rounded-2xl border-2 relative" style="background:#eff6ff;border-color:#2563eb"><span class="absolute -top-3 left-4 text-white text-[10px] font-bold px-3 py-1 rounded-full" style="background:#2563eb">POPULAR</span><div class="font-bold">Basic</div><div class="text-3xl font-black my-2" style="color:#2563eb">₹49<span class="text-sm font-normal" style="color:#737686">/month</span></div><p class="text-xs mb-3" style="color:#737686">2-5× more than free</p><ul class="space-y-1.5 mb-4">${["Unlimited AI Chat","MCQ Generator","Study Notes"].map(f=>`<li class="text-xs flex items-center gap-2" style="color:#0f172a"><span style="color:#2563eb">✓</span>${f}</li>`).join("")}</ul><button onclick="pay(49)" class="w-full py-3 font-bold rounded-xl text-white text-sm btn-primary">Get Started</button></div>
+        <div class="card p-5"><div class="font-bold">Popular ⭐</div><div class="text-3xl font-black my-2" style="color:#2563eb">₹99<span class="text-sm font-normal" style="color:#737686">/month</span></div><p class="text-xs mb-3" style="color:#737686">10-20× more than free</p><ul class="space-y-1.5 mb-4">${["Everything in Basic","PYQ Finder","Timed Tests","Exam Predictor","Analysis"].map(f=>`<li class="text-xs flex items-center gap-2" style="color:#434655"><span style="color:#2563eb">✓</span>${f}</li>`).join("")}</ul><button onclick="pay(99)" class="w-full py-3 font-bold rounded-xl text-white text-sm btn-dark">Go Popular</button></div>
+        <div class="p-5 rounded-2xl" style="background:#0f172a"><div class="font-bold text-white">Pro — Full Power</div><div class="text-3xl font-black my-2 text-white">₹149<span class="text-sm font-normal" style="color:#737686">/month</span></div><p class="text-xs mb-3" style="color:#737686">Unlimited Everything • Fastest AI • Priority</p><ul class="space-y-1.5 mb-4">${["Unlimited Everything","Priority AI Response","Advanced Analytics","PDF Downloads","Expert Support"].map(f=>`<li class="text-xs flex items-center gap-2" style="color:#b4c5ff"><span style="color:#60a5fa">✓</span>${f}</li>`).join("")}</ul><button onclick="pay(149)" class="w-full py-3 font-bold rounded-xl text-sm" style="background:#fff;color:#0f172a">Go Pro</button></div>
+      </div>
+    </section>
+    <div class="px-5 py-8 max-w-sm mx-auto"><button onclick="set({sc:'boardSelect'})" class="w-full py-4 font-bold rounded-2xl text-white text-sm btn-primary" style="box-shadow:0 8px 24px rgba(37,99,235,.3)">🚀 ${ln==="hi"?"Abhi Shuru Karein — Free":"Start Now — Free"}</button></div>
+    <footer style="background:#0f172a;color:#fff" class="px-5 py-8"><div class="font-black text-xl mb-2" style="color:#60a5fa">BoardAI</div><p class="text-xs mb-4" style="color:#737686">Empowering learners through AI.</p><p class="text-center text-xs mt-4" style="color:#434655">© 2025 BoardAI. All rights reserved.</p></footer>
+  </main></div>`;
+  }
+  
+// ─── BOARD/MEDIUM/CLASS SELECT ───
+function rBoardSel(){
+  return`<div class="min-h-screen flex flex-col items-center justify-center p-6" style="background:#f7f9fb">
+    <button onclick="set({sc:'landing'})" class="self-start mb-8 text-sm font-semibold card px-4 py-2.5" style="color:#434655">← Back</button>
+    <div class="text-2xl font-black mb-1" style="color:#2563eb">BoardAI</div>
+    <p class="text-sm mb-8" style="color:#737686">${L()==="hi"?"Board Chuniye":"Select Your Board"}</p>
     <div class="flex gap-4 w-full max-w-xs">
-      <button onclick="S.board='bihar';set({screen:'mediumSelect'})" class="flex-1 border-2 border-slate-200 rounded-2xl p-6 text-center hover:border-blue-400 active:bg-blue-50">
+      <button onclick="S.board='bihar';set({sc:'mediumSelect'})" class="flex-1 card p-6 text-center hover:border-[#2563eb] hover:bg-[#eff6ff] transition-all">
         <div class="text-3xl mb-2">🏫</div><div class="font-bold text-sm">Bihar Board</div>
       </button>
-      <button onclick="S.board='cbse';S.medium='en';set({screen:'classSelect'})" class="flex-1 border-2 border-slate-200 rounded-2xl p-6 text-center hover:border-blue-400 active:bg-blue-50">
+      <button onclick="S.board='cbse';S.medium='en';set({sc:'classSelect'})" class="flex-1 card p-6 text-center hover:border-[#2563eb] hover:bg-[#eff6ff] transition-all">
         <div class="text-3xl mb-2">📘</div><div class="font-bold text-sm">CBSE</div>
       </button>
     </div>
   </div>`;
 }
-
-function renderMediumSelect(){
-  return`<div class="min-h-screen flex flex-col items-center justify-center p-6 bg-white">
-    <button onclick="set({screen:'boardSelect'})" class="self-start mb-6 text-sm text-slate-500 border border-slate-200 rounded-lg px-3 py-2">← Back</button>
-    <div class="text-2xl font-black text-blue-600 mb-1">BoardAI</div>
-    <div class="text-slate-400 text-sm mb-8">${l()==="hi"?"Medium Chuniye":"Select Medium"}</div>
+function rMedSel(){
+  return`<div class="min-h-screen flex flex-col items-center justify-center p-6" style="background:#f7f9fb">
+    <button onclick="set({sc:'boardSelect'})" class="self-start mb-8 text-sm font-semibold card px-4 py-2.5" style="color:#434655">← Back</button>
+    <div class="text-2xl font-black mb-1" style="color:#2563eb">BoardAI</div>
+    <p class="text-sm mb-8" style="color:#737686">${L()==="hi"?"Medium Chuniye":"Select Medium"}</p>
     <div class="flex gap-4 w-full max-w-xs">
-      <button onclick="S.medium='hi';set({screen:'classSelect'})" class="flex-1 border-2 border-slate-200 rounded-2xl p-6 text-center hover:border-blue-400 active:bg-blue-50">
+      <button onclick="S.medium='hi';set({sc:'classSelect'})" class="flex-1 card p-6 text-center hover:border-[#2563eb] hover:bg-[#eff6ff] transition-all">
         <div class="text-3xl mb-2">🇮🇳</div><div class="font-bold text-sm">हिंदी</div>
       </button>
-      <button onclick="S.medium='en';set({screen:'classSelect'})" class="flex-1 border-2 border-slate-200 rounded-2xl p-6 text-center hover:border-blue-400 active:bg-blue-50">
+      <button onclick="S.medium='en';set({sc:'classSelect'})" class="flex-1 card p-6 text-center hover:border-[#2563eb] hover:bg-[#eff6ff] transition-all">
         <div class="text-3xl mb-2">🌐</div><div class="font-bold text-sm">English</div>
       </button>
     </div>
   </div>`;
 }
-
-function renderClassSelect(){
-  return`<div class="min-h-screen flex flex-col items-center justify-center p-6 bg-white">
-    <button onclick="set({screen:S.board==='cbse'?'boardSelect':'mediumSelect'})" class="self-start mb-6 text-sm text-slate-500 border border-slate-200 rounded-lg px-3 py-2">← Back</button>
-    <div class="text-2xl font-black text-blue-600 mb-1">BoardAI</div>
-    <div class="text-slate-400 text-sm mb-8">${l()==="hi"?"Class Chuniye":"Select Class"}</div>
+function rClsSel(){
+  return`<div class="min-h-screen flex flex-col items-center justify-center p-6" style="background:#f7f9fb">
+    <button onclick="set({sc:S.board==='cbse'?'boardSelect':'mediumSelect'})" class="self-start mb-8 text-sm font-semibold card px-4 py-2.5" style="color:#434655">← Back</button>
+    <div class="text-2xl font-black mb-1" style="color:#2563eb">BoardAI</div>
+    <p class="text-sm mb-8" style="color:#737686">${L()==="hi"?"Class Chuniye":"Select Your Class"}</p>
     <div class="flex gap-4">
-      ${[10,11,12].map(c=>`<button onclick="goToApp('${S.board}','${S.medium||"en"}',${c})" class="w-24 h-24 border-2 border-slate-200 rounded-2xl flex flex-col items-center justify-center hover:border-blue-400 active:bg-blue-50">
-        <div class="text-3xl font-black">${c}</div><div class="text-xs text-slate-400 font-semibold">CLASS</div>
+      ${[10,11,12].map(c=>`<button onclick="goToApp('${S.board}','${S.medium||"en"}',${c})" class="w-24 h-24 card flex flex-col items-center justify-center hover:border-[#2563eb] hover:bg-[#eff6ff] transition-all" style="border-radius:20px">
+        <div class="text-3xl font-black" style="color:#0f172a">${c}</div>
+        <div class="text-xs font-bold mt-0.5" style="color:#737686">CLASS</div>
       </button>`).join("")}
     </div>
   </div>`;
 }
 
-// ── APP ──
-function renderApp(){
-  const tab=S.tab; const ln=l();
-  const boardLbl=S.board==="bihar"?"Bihar Board":"CBSE";
+// ─── APP ───
+function rApp(){
+  const t=S.tab;const ln=L();const pt=S.ptab||"mcq";
+  const board=S.board==="bihar"?"Bihar Board":"CBSE";
   const uName=S.user?.user_metadata?.name||S.user?.email?.split("@")[0]||"Guest";
-  const uInit=uName[0]?.toUpperCase()||"G";
-  const pt=S.practiceTab||"mcq";
+  const uInit=(uName[0]||"G").toUpperCase();
 
   return`
-  ${S.showPrem?`<div class="fixed inset-0 bg-black/60 z-50 flex items-end" onclick="if(event.target===this)set({showPrem:false})">
+  ${S.showPrem?`<div class="fixed inset-0 z-50 flex items-end" style="background:rgba(0,0,0,.65)" onclick="if(event.target===this)set({showPrem:false})">
     <div class="bg-white rounded-t-3xl w-full p-6 pb-8 max-w-lg mx-auto">
-      <div class="text-center text-4xl mb-3">🔒</div>
-      <div class="font-bold text-lg text-center mb-1">${ln==="hi"?"Premium Feature":"Premium Feature"}</div>
-      <div class="text-slate-400 text-sm text-center mb-5">${ln==="hi"?"Upgrade karein aur sab unlock karein":"Upgrade to unlock all features"}</div>
-      ${[49,99,149].map(a=>`<button onclick="openPayment(${a})" class="flex items-center justify-between w-full px-4 py-3.5 rounded-xl border-2 mb-3 ${a===99?"border-blue-600 bg-blue-50":"border-slate-200"} hover:border-blue-400">
-        <div><div class="font-bold text-sm">₹${a}/month${a===99?" ⭐":""}</div><div class="text-xs text-slate-400">${PLANS[a].name}</div></div>
-        <div class="text-xs text-slate-400 text-right">${PLANS[a].desc}</div>
+      <div class="w-12 h-1 rounded-full bg-[#e0e3e5] mx-auto mb-5"></div>
+      <div class="text-center mb-5">
+        <div class="text-4xl mb-2">🔓</div>
+        <div class="text-xl font-bold text-[#191c1e]">Unlock Premium</div>
+        <div class="text-sm mt-1 text-[#737686]">${ln==="hi"?"Upgrade karein aur sab unlock karein":"Upgrade to unlock all features"}</div>
+      </div>
+      ${[49,99,149].map(a=>`<button onclick="pay(${a})" class="flex items-center justify-between w-full px-4 py-4 rounded-2xl mb-3 transition-all hover:border-[#2563eb] ${a===99?"border-[#2563eb] bg-[#eff6ff]":"bg-[#f7f9fb]"}" style="border:2px solid ${a===99?"#2563eb":"#e0e3e5"}">
+        <div class="text-left"><div class="font-bold text-[#191c1e]">₹${a}/month${a===99?" ⭐":""}</div><div class="text-xs text-[#737686] mt-0.5">${PLANS[a].n}</div></div>
+        <div class="text-xs text-right text-[#737686]">${PLANS[a].d}</div>
       </button>`).join("")}
-      <button onclick="set({showPrem:false})" class="w-full text-slate-400 text-sm py-2">${ln==="hi"?"Baad mein":"Maybe later"}</button>
+      <button onclick="set({showPrem:false})" class="w-full text-[#737686] text-sm py-2 mt-2">${ln==="hi"?"Baad mein":"Maybe later"}</button>
     </div>
   </div>`:""}
 
-  ${S.menuOpen?`<div class="fixed inset-0 bg-black/50 z-40" onclick="set({menuOpen:false})"></div>`:""}
+  ${S.menuOpen?`<div class="fixed inset-0 z-40" style="background:rgba(0,0,0,.55)" onclick="set({menuOpen:false})"></div>`:""}
 
-  <div class="flex h-screen overflow-hidden">
-    <!-- Sidebar -->
-    <div class="side-menu ${S.menuOpen?"open":""} fixed left-0 top-0 h-full w-60 bg-slate-900 z-50 flex flex-col shadow-2xl">
-      <div class="p-4 border-b border-white/10">
-        <div class="font-black text-lg"><span class="text-blue-400">Board</span><span class="text-white">AI</span></div>
-        <div class="text-xs text-slate-400 mt-0.5">${boardLbl} • Class ${S.cls}</div>
-        ${S.user?`<div class="flex items-center gap-2 mt-3 bg-white/5 rounded-xl p-2.5 cursor-pointer">
-          <div class="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">${uInit}</div>
-          <div class="flex-1 min-w-0"><div class="text-white text-xs font-medium truncate">${uName}</div><div class="text-slate-400 text-[10px]">${isPrem()?"PRO ✨":"FREE"}</div></div>
-        </div>`:`<button onclick="googleLogin()" class="mt-3 w-full text-xs text-blue-400 bg-white/5 rounded-xl py-2 text-center">Login to save progress</button>`}
+  <div class="flex h-screen overflow-hidden" style="background:#f7f9fb">
+    <!-- SIDEBAR -->
+    <div class="side ${S.menuOpen?"open":""} fixed left-0 top-0 h-full w-64 z-50 flex flex-col shadow-2xl" style="background:#0f172a">
+      <div class="p-4 border-b" style="border-color:rgba(255,255,255,.08)">
+        <div class="text-lg font-black mb-0.5"><span style="color:#60a5fa">Board</span><span class="text-white">AI</span></div>
+        <div class="text-xs" style="color:#737686">${board} • Class ${S.cls}</div>
+        ${S.user
+          ?`<div class="flex items-center gap-2.5 mt-3 p-2.5 rounded-xl" style="background:rgba(255,255,255,.06)">
+            <div class="w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs font-bold flex-shrink-0" style="background:#2563eb">${uInit}</div>
+            <div class="flex-1 min-w-0"><div class="text-white text-xs font-semibold truncate">${uName}</div><div class="text-[10px] mt-0.5" style="color:${isPrem()?"#fbbf24":"#737686"}">${isPrem()?"PRO ✨":"FREE"}</div></div>
+          </div>`
+          :`<button onclick="gLogin()" class="mt-3 w-full text-xs text-center py-2 rounded-xl" style="background:rgba(96,165,250,.15);color:#60a5fa">🔑 Login to save progress</button>`}
       </div>
       <nav class="flex-1 p-3 flex flex-col gap-1 overflow-y-auto">
-        ${[["chat","🤖",ln==="hi"?"Ask AI":"Ask AI"],["practice","📚",ln==="hi"?"Practice":"Practice"],["analysis","📊",ln==="hi"?"Analysis":"Analysis"],["predictor","🔮","Predictor"]].map(([t,ic,lb])=>`
-        <button onclick="set({tab:'${t}',menuOpen:false})" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium w-full text-left ${tab===t?"bg-blue-600/20 text-white":"text-slate-400 hover:bg-white/5"}">
-          <span>${ic}</span>${lb}
+        ${[["chat","🤖",ln==="hi"?"Ask AI":"Ask AI"],["practice","📚",ln==="hi"?"Practice":"Practice"],["analysis","📊","Analysis"],["predictor","🔮","Predictor"]].map(([id,ic,lb])=>`
+        <button onclick="set({tab:'${id}',menuOpen:false})" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium w-full text-left transition-all ${t===id?"text-white":"text-[#737686] hover:text-white"}" style="${t===id?"background:rgba(37,99,235,.25)":""}">
+          <span class="text-base">${ic}</span>${lb}
         </button>`).join("")}
-        <div class="border-t border-white/10 my-2"></div>
-        <button onclick="set({screen:'landing',menuOpen:false})" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:bg-white/5 w-full text-left"><span>🏠</span>Home</button>
-        <button onclick="set({tab:'settings',menuOpen:false})" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium ${tab==="settings"?"bg-blue-600/20 text-white":"text-slate-400 hover:bg-white/5"} w-full text-left"><span>⚙️</span>Settings</button>
+        <div class="border-t my-2" style="border-color:rgba(255,255,255,.08)"></div>
+        <button onclick="set({sc:'landing',menuOpen:false})" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium w-full text-left transition-all text-[#737686] hover:text-white">
+          <span>🏠</span>Home
+        </button>
+        <button onclick="set({tab:'settings',menuOpen:false})" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium w-full text-left transition-all ${t==="settings"?"text-white":"text-[#737686] hover:text-white"}" style="${t==="settings"?"background:rgba(37,99,235,.25)":""}">
+          <span>⚙️</span>Settings
+        </button>
       </nav>
-      <div class="p-3 border-t border-white/10 flex flex-col gap-2">
-        ${!isPrem()?`<button onclick="set({showPrem:true,menuOpen:false})" class="w-full py-2.5 bg-blue-600 text-white rounded-xl text-sm font-bold">⭐ Upgrade</button>`:""}
-        ${S.user?`<button onclick="logout()" class="w-full py-2 text-slate-500 text-xs">Logout</button>`:""}
+      <div class="p-3 border-t flex flex-col gap-2" style="border-color:rgba(255,255,255,.08)">
+        ${!isPrem()?`<button onclick="set({showPrem:true,menuOpen:false})" class="w-full py-2.5 rounded-xl font-bold text-sm text-white btn-primary">⭐ Upgrade Premium</button>`:""}
+        ${S.user?`<button onclick="logout()" class="w-full py-2 text-xs" style="color:#737686">Logout</button>`:""}
       </div>
     </div>
 
-    <!-- Main -->
+    <!-- MAIN -->
     <div class="flex-1 flex flex-col overflow-hidden w-full">
-      <!-- Topbar -->
-      <div class="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-white flex-shrink-0">
+      <!-- TOPBAR -->
+      <div class="flex items-center justify-between px-4 py-3 border-b bg-white flex-shrink-0" style="border-color:#e0e3e5">
         <div class="flex items-center gap-3">
-          <button onclick="set({menuOpen:true})" class="p-1.5 rounded-lg hover:bg-slate-100">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          <button onclick="set({menuOpen:true})" class="p-2 rounded-xl hover:bg-[#f2f4f6] transition-all">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#434655" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
           </button>
-          <span class="font-bold text-sm">${tab==="chat"?"Ask AI":tab==="practice"?"Practice":tab==="analysis"?"Analysis":tab==="predictor"?"Predictor":"Settings"}</span>
+          <span class="font-bold text-sm text-[#191c1e]">${t==="chat"?(ln==="hi"?"Ask AI":"Ask AI"):t==="practice"?"Practice":t==="analysis"?"Analysis":t==="predictor"?"Predictor":"Settings"}</span>
         </div>
-        <button onclick="set({lang:S.lang==='hi'?'en':'hi'})" class="px-2.5 py-1.5 bg-slate-100 rounded-lg text-xs font-semibold text-slate-600">${ln==="hi"?"EN":"हि"}</button>
+        <div class="flex items-center gap-2">
+          ${t==="chat"&&S.history.length>0?`<button onclick="clearChat()" class="text-xs px-3 py-1.5 rounded-lg font-semibold" style="background:#fef2f2;color:#dc2626">Clear</button>`:""}
+          <button onclick="set({lang:S.lang==='hi'?'en':'hi'})" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold" style="background:#eceef0;color:#434655">${ln==="hi"?"EN":"हि"}</button>
+        </div>
       </div>
 
-      ${tab==="chat"?`
-      <div class="flex flex-col flex-1 overflow-hidden">
-        <div class="flex-1 overflow-y-auto p-4" id="chatArea"></div>
-        <div class="p-3 border-t border-slate-100 bg-white flex-shrink-0">
-          <div class="flex gap-2 overflow-x-auto pb-2" style="scrollbar-width:none">
-            ${(CHIPS[ln]||[]).map(c=>`<button onclick="appendChip('${c.replace(/'/g,"\\'")} ')" class="flex-shrink-0 px-3 py-1.5 bg-slate-100 rounded-full text-xs font-semibold text-slate-600">${c}</button>`).join("")}
-          </div>
-          <div class="flex gap-2 items-end">
-            <textarea id="cInp" rows="2" placeholder="${ln==="hi"?"Science sawaal likhiye...":"Type your Science question..."}" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-sm resize-none outline-none focus:border-blue-400" style="max-height:80px"></textarea>
-            <button id="cBtn" onclick="sendChat()" disabled class="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white flex-shrink-0 disabled:bg-slate-200 disabled:cursor-not-allowed">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M2 21L23 12 2 3v7l15 2-15 2v7z"/></svg>
-            </button>
-          </div>
-        </div>
-      </div>`:""}
-
-      ${tab==="practice"?renderPractice(pt):""}
-      ${tab==="analysis"?renderAnalysis():""}
-      ${tab==="predictor"?renderPredictor():""}
-      ${tab==="settings"?renderSettings():""}
+      <!-- CONTENT -->
+      ${t==="chat"?rChat():""}
+      ${t==="practice"?rPractice(pt):""}
+      ${t==="analysis"?rAnalysis():""}
+      ${t==="predictor"?rPredictor():""}
+      ${t==="settings"?rSettings():""}
     </div>
   </div>`;
 }
 
-function renderPractice(pt){
-  const ln=l();
+function rChat(){
+  const ln=L();
+  const chips=ln==="hi"
+    ?["📝 Short mein","🔢 Formula dikhao","🧮 Numerical karo","📖 Detail mein","⚡ Example do","🔑 Key points"]
+    :["📝 Brief answer","🔢 Show formula","🧮 Solve numerical","📖 Explain fully","⚡ Give example","🔑 Key points"];
+  return`<div class="flex flex-col flex-1 overflow-hidden">
+    <div class="flex-1 overflow-y-auto px-4 py-4" id="chatArea" style="background:#f7f9fb"></div>
+    <div class="border-t bg-white flex-shrink-0 p-3" style="border-color:#e0e3e5">
+      <div class="flex gap-2 overflow-x-auto pb-2" style="scrollbar-width:none">
+        ${chips.map(c=>`<button onclick="appendChip('${c.replace(/'/g,"\\'")} ')" class="flex-shrink-0 px-3 py-1.5 text-xs font-semibold rounded-full border-2 transition-all" style="background:#f2f4f6;color:#434655;border-color:#c3c6d7">${c}</button>`).join("")}
+      </div>
+      <div class="flex gap-2 items-end mt-1">
+        <textarea id="cInp" rows="2" placeholder="${ln==="hi"?"Science sawaal likhiye...":"Type your Science question..."}" class="flex-1 inp px-3.5 py-2.5 text-sm resize-none" style="background:#f7f9fb;max-height:80px;color:#191c1e"></textarea>
+        <button id="cBtn" onclick="sendChat()" disabled class="w-11 h-11 rounded-xl flex items-center justify-center text-white flex-shrink-0 btn-dark disabled:opacity-40 disabled:cursor-not-allowed">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M2 21L23 12 2 3v7l15 2-15 2v7z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function rPractice(pt){
+  const ln=L();
   const {mcqs,mcqLoading,mcqErr,mcqAns,mcqScore,mcqCh,mcqCnt}=S;
   const {pyqs,pyqLoading,pyqErr,pyqYrs}=S;
   const {testQs,testLoading,testRunning,testScore,testAns,testTimer,testCh,testCnt}=S;
-  
-  // MCQ
+
+  // ─ MCQ ─
   let mcqH="";
-  if(mcqLoading) mcqH=`<div class="flex flex-col items-center py-12 gap-3"><div class="w-8 h-8 border-[3px] border-slate-200 border-t-slate-900 rounded-full spinner"></div><div class="text-sm font-bold">${ln==="hi"?"Generate ho raha hai...":"Generating..."}</div><div class="text-xs text-slate-400">${mcqCnt} MCQs • ${mcqCh}</div></div>`;
-  else if(mcqScore) mcqH=`<div class="text-center py-6 border-b border-slate-100 mb-4"><div class="text-5xl">${mcqScore.c/mcqScore.total>=0.6?"🏆":"📚"}</div><div class="text-3xl font-black mt-2">${mcqScore.c}/${mcqScore.total}</div><div class="text-sm text-slate-400">${Math.round((mcqScore.c/mcqScore.total)*100)}%</div></div>
-    ${mcqs.map((m,i)=>`<div class="border rounded-xl p-3 mb-2 text-sm ${mcqAns[i]===m.ans?"border-green-200 bg-green-50":"border-red-200 bg-red-50"}">
-      ${m.important?`<span class="text-[9px] text-amber-600 font-bold">⭐ IMPORTANT</span><br>`:""}
-      <span class="text-xs text-slate-500">Q${i+1}. ${esc(m.q)}</span><br>
-      <span class="font-semibold ${mcqAns[i]===m.ans?"text-green-700":"text-red-600"}">${mcqAns[i]===m.ans?"✅":"❌"} ${esc(m[mcqAns[i]]||"")}</span>
-      ${mcqAns[i]!==m.ans?`<br><span class="text-green-700 text-xs">✓ ${esc(m[m.ans])}</span>`:""}
-      <br><span class="text-[11px] text-slate-400">💡 ${esc(m.exp)}</span>
-    </div>`).join("")}
-    <button onclick="set({mcqs:[],mcqAns:{},mcqScore:null})" class="w-full py-3 bg-slate-900 text-white rounded-xl font-bold text-sm mt-2">🔄 ${ln==="hi"?"Dobara":"Try Again"}</button>`;
-  else if(mcqs.length>0) mcqH=`<div class="flex justify-between items-center mb-3">
-      <span class="text-xs font-semibold text-slate-500">${mcqs.length} MCQ • ${mcqCh}</span>
-      <button onclick="set({mcqs:[],mcqErr:''})" class="text-xs text-slate-400 border border-slate-200 px-2.5 py-1 rounded-lg">← Back</button>
+  if(mcqLoading) mcqH=`<div class="flex flex-col items-center py-16 gap-4"><div class="w-9 h-9 rounded-full spin" style="border:3px solid #e0e3e5;border-top-color:#0f172a"></div><div class="font-bold text-[#191c1e]">${ln==="hi"?"Generate ho raha hai...":"Generating..."}</div><div class="text-sm text-[#737686]">${mcqCnt} MCQs • ${mcqCh}</div></div>`;
+  else if(mcqScore) mcqH=`<div class="text-center py-8">
+    <div class="text-6xl">${mcqScore.c/mcqScore.total>=0.6?"🏆":"📚"}</div>
+    <div class="text-4xl font-black mt-3 text-[#191c1e]">${mcqScore.c}/${mcqScore.total}</div>
+    <div class="text-[#737686] mt-1">${Math.round((mcqScore.c/mcqScore.total)*100)}% correct</div>
+  </div>
+  <div class="flex flex-col gap-3">
+  ${mcqs.map((m,i)=>`<div class="card p-4 ${mcqAns[i]===m.ans?"":""}">
+    ${m.important?`<span class="text-[10px] font-bold text-[#d97706]">⭐ IMPORTANT</span>`:""}
+    <div class="text-xs text-[#737686] mb-1">Q${i+1}.</div>
+    <div class="text-sm font-medium text-[#191c1e] mb-2">${esc(m.q)}</div>
+    <div class="text-sm font-semibold ${mcqAns[i]===m.ans?"text-[#16a34a]":"text-[#dc2626]"}">${mcqAns[i]===m.ans?"✅":"❌"} ${esc(m[mcqAns[i]]||"")}</div>
+    ${mcqAns[i]!==m.ans?`<div class="text-sm text-[#16a34a] mt-1">✓ Correct: ${esc(m[m.ans])}</div>`:""}
+    <div class="text-xs text-[#737686] mt-2 p-2.5 rounded-lg" style="background:#f2f4f6">💡 ${esc(m.exp)}</div>
+  </div>`).join("")}
+  </div>
+  <button onclick="set({mcqs:[],mcqAns:{},mcqScore:null})" class="w-full py-3.5 rounded-xl font-bold text-sm mt-4 btn-dark">🔄 ${ln==="hi"?"Dobara Karein":"Try Again"}</button>`;
+  else if(mcqs.length>0) mcqH=`<div class="flex justify-between items-center mb-5">
+    <div><div class="font-bold text-[#191c1e]">${mcqCh}</div><div class="text-xs text-[#737686] mt-0.5">${mcqs.length} questions</div></div>
+    <button onclick="set({mcqs:[],mcqErr:''})" class="text-xs font-semibold card px-3 py-2 text-[#434655]">← Back</button>
+  </div>
+  ${mcqs.map((m,i)=>`<div class="card p-4 mb-4">
+    <div class="flex items-center gap-2 mb-3">
+      <span class="text-xs font-bold text-white px-2 py-0.5 rounded-full" style="background:#0f172a">Q${i+1}</span>
+      ${m.important?`<span class="text-[10px] font-bold text-[#d97706]">⭐ Important</span>`:""}
     </div>
-    ${mcqs.map((m,i)=>`<div class="bg-white border border-slate-200 rounded-xl p-4 mb-3 shadow-sm">
-      <div class="text-[10px] text-slate-400 font-semibold mb-1">Q ${i+1} ${m.important?"⭐":""}</div>
-      <div class="text-sm font-medium leading-relaxed mb-3">${esc(m.q)}</div>
-      <div class="og${i} flex flex-col gap-1.5">
-        ${["a","b","c","d"].map(o=>`<button class="w-full text-left px-3 py-2.5 rounded-xl text-sm flex items-center gap-2 border transition-all ${mcqAns[i]===o?"bg-slate-900 text-white border-slate-900":"bg-slate-50 text-slate-700 border-slate-200"}" onclick="selOpt(${i},'${o}')">
-          <span class="font-bold text-xs w-4">${o.toUpperCase()}.</span><span>${esc(m[o]||"")}</span>
-        </button>`).join("")}
-      </div>
-    </div>`).join("")}
-    <button id="mcqSub" onclick="submitMCQ()" disabled class="w-full py-3.5 rounded-xl font-bold text-sm mt-2 bg-slate-200 text-slate-400 cursor-not-allowed">✓ Submit (0/${mcqs.length})</button>`;
-  else mcqH=`${mcqErr?`<div class="bg-red-50 border border-red-200 rounded-xl p-3 mb-3 text-red-600 text-sm">${mcqErr}</div>`:""}
-    <div class="mb-4"><label class="text-xs font-semibold text-slate-600 block mb-2">Chapter</label>
-    <select onchange="S.mcqCh=this.value" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none bg-white">${chs().map(c=>`<option value="${c}" ${mcqCh===c?"selected":""}>${c}</option>`).join("")}</select></div>
-    <div class="mb-5"><label class="text-xs font-semibold text-slate-600 block mb-2">${ln==="hi"?"Kitne MCQ?":"Number of MCQs"}</label>
-    <div class="flex gap-2">${[20,30,40,50].map(n=>`<button onclick="S.mcqCnt=${n}" class="px-4 py-2 rounded-full text-xs font-semibold border ${mcqCnt===n?"bg-slate-900 text-white border-slate-900":"bg-slate-50 text-slate-600 border-slate-200"}">${n}</button>`).join("")}</div></div>
-    <button onclick="genMCQ()" class="w-full py-3.5 bg-slate-900 text-white rounded-xl font-bold text-sm">⚡ ${ln==="hi"?"MCQ Generate Karein":"Generate MCQ"}</button>`;
+    <div class="text-sm font-medium leading-relaxed text-[#191c1e] mb-4">${esc(m.q)}</div>
+    <div class="og${i} flex flex-col gap-2">
+      ${["a","b","c","d"].map(o=>`<button class="w-full text-left px-3.5 py-3 rounded-xl text-sm flex items-center gap-2.5 border-2 transition-all font-medium ${mcqAns[i]===o?"bg-[#0f172a] text-white border-[#0f172a]":"bg-white text-[#434655] border-[#c3c6d7] hover:border-[#0f172a]"}" onclick="selOpt(${i},'${o}')">
+        <span class="text-xs font-black w-5">${o.toUpperCase()}.</span><span>${esc(m[o]||"")}</span>
+      </button>`).join("")}
+    </div>
+  </div>`).join("")}
+  <button id="mcqSub" onclick="submitMCQ()" disabled class="w-full py-3.5 rounded-xl font-bold text-sm mt-2 bg-[#e0e3e5] text-[#737686] cursor-not-allowed">Submit Answers (0/${mcqs.length})</button>`;
+  else mcqH=`${mcqErr?`<div class="p-3.5 rounded-xl text-sm mb-4 font-medium" style="background:#fef2f2;color:#dc2626;border:1.5px solid #fecaca">${mcqErr}</div>`:""}
+  <div class="mb-5"><label class="text-xs font-bold text-[#737686] uppercase tracking-wider block mb-2">Chapter</label>
+  <select onchange="S.mcqCh=this.value" class="inp w-full px-3.5 py-3 text-sm" style="color:#191c1e">${chs().map(c=>`<option value="${c}" ${mcqCh===c?"selected":""}>${c}</option>`).join("")}</select></div>
+  <div class="mb-6"><label class="text-xs font-bold text-[#737686] uppercase tracking-wider block mb-2">${ln==="hi"?"Kitne MCQ?":"Number of MCQs"}</label>
+  <div class="flex gap-2 flex-wrap">${[20,30,40,50].map(n=>`<button onclick="S.mcqCnt=${n};this.parentElement.querySelectorAll('button').forEach(b=>b.className='pill px-4 py-2 text-xs '+(b.textContent=='${n}'?'on':''))" class="pill px-4 py-2 text-xs ${mcqCnt===n?"on":""}">${n}</button>`).join("")}</div></div>
+  <button onclick="genMCQ()" class="w-full py-4 rounded-xl font-bold text-sm text-white btn-primary">⚡ ${ln==="hi"?"MCQ Generate Karein":"Generate MCQ"}</button>`;
 
-  // PYQ
-  const pyqH=`${pyqErr?`<div class="bg-red-50 border border-red-200 rounded-xl p-3 mb-3 text-red-600 text-sm">${pyqErr}</div>`:""}
-    <div class="mb-4"><label class="text-xs font-semibold text-slate-600 block mb-2">Chapter</label>
-    <select onchange="S.pyqCh=this.value" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none bg-white">${chs().map(c=>`<option value="${c}" ${S.pyqCh===c?"selected":""}>${c}</option>`).join("")}</select></div>
-    <div class="mb-5"><label class="text-xs font-semibold text-slate-600 block mb-2">${ln==="hi"?"Saal Chuniye":"Select Years"}</label>
-    <div class="flex flex-wrap gap-2">${YEARS.map(y=>`<button data-yr="${y}" class="yrpill px-3 py-1.5 rounded-full text-xs font-semibold border cursor-pointer ${pyqYrs.includes(y)?"bg-slate-900 text-white border-slate-900":"bg-slate-50 text-slate-600 border-slate-200"}" onclick="toggleYr(${y})">${y}</button>`).join("")}</div></div>
-    <button id="pyqBtn" onclick="fetchPYQ()" ${!pyqYrs.length?"disabled":""} class="w-full py-3.5 bg-slate-900 text-white rounded-xl font-bold text-sm disabled:bg-slate-200 disabled:text-slate-400">🔍 ${ln==="hi"?"PYQ Dhundhein":"Find PYQ"}</button>
-    ${pyqLoading?`<div class="flex items-center justify-center py-8 gap-3"><div class="w-6 h-6 border-2 border-slate-200 border-t-slate-900 rounded-full spinner"></div><span class="text-sm text-slate-500">${ln==="hi"?"Khoj raha hai...":"Searching..."}</span></div>`:""}
-    <div class="mt-4">${pyqs.map((p,i)=>`<div class="bg-white border border-slate-200 rounded-xl p-4 mb-3 shadow-sm">
-      <div class="flex justify-between items-center mb-2">
-        <span class="bg-slate-900 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">${p.year}${p.repeated?` 🔄`:""}</span>
-        <span class="text-xs text-slate-400">${p.marks} marks</span>
+  // ─ PYQ ─
+  const pyqH=`${pyqErr?`<div class="p-3.5 rounded-xl text-sm mb-4 font-medium" style="background:#fef2f2;color:#dc2626;border:1.5px solid #fecaca">${pyqErr}</div>`:""}
+  <div class="mb-5"><label class="text-xs font-bold text-[#737686] uppercase tracking-wider block mb-2">Chapter</label>
+  <select onchange="S.pyqCh=this.value" class="inp w-full px-3.5 py-3 text-sm" style="color:#191c1e">${chs().map(c=>`<option value="${c}" ${S.pyqCh===c?"selected":""}>${c}</option>`).join("")}</select></div>
+  <div class="mb-6"><label class="text-xs font-bold text-[#737686] uppercase tracking-wider block mb-2">${ln==="hi"?"Saal Chuniye":"Select Years"}</label>
+  <div class="flex flex-wrap gap-2">${YEARS.map(y=>`<button data-yr="${y}" class="yrp px-3 py-1.5 rounded-full text-xs font-semibold border-2 cursor-pointer transition-all ${pyqYrs.includes(y)?"bg-[#0f172a] text-white border-[#0f172a]":"bg-white text-[#434655] border-[#c3c6d7] hover:border-[#0f172a]"}" onclick="toggleYr(${y})">${y}</button>`).join("")}</div></div>
+  <button id="pyqBtn" onclick="fetchPYQ()" ${!pyqYrs.length?"disabled":""} class="w-full py-4 rounded-xl font-bold text-sm text-white btn-primary disabled:opacity-40 disabled:cursor-not-allowed">🔍 ${ln==="hi"?"PYQ Dhundhein":"Find PYQ"}</button>
+  ${pyqLoading?`<div class="flex items-center justify-center py-10 gap-3"><div class="w-7 h-7 rounded-full spin" style="border:2.5px solid #e0e3e5;border-top-color:#0f172a"></div><span class="text-sm text-[#737686]">${ln==="hi"?"Khoj raha hai...":"Searching..."}</span></div>`:""}
+  <div class="mt-5 flex flex-col gap-4">
+  ${pyqs.map((p,i)=>`<div class="card p-5">
+    <div class="flex justify-between items-center mb-3">
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-black text-white px-2.5 py-1 rounded-full" style="background:#0f172a">${p.year}</span>
+        ${p.repeated?`<span class="text-[10px] font-bold px-2 py-0.5 rounded-full" style="background:#fef3c7;color:#92400e">🔄 Repeated</span>`:""}
       </div>
-      <div class="text-sm leading-relaxed mb-3">${esc(p.q)}</div>
-      <div id="pyqans${i}"><button onclick="revPYQ(${i})" class="w-full py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700">👁 ${ln==="hi"?"Jawab Dekho":"Show Answer"}</button></div>
-    </div>`).join("")}</div>`;
-
-  // TEST
+      <span class="text-xs font-semibold text-[#737686]">${p.marks} marks</span>
+    </div>
+    <div class="text-sm font-medium leading-relaxed text-[#191c1e] mb-3">${esc(p.q)}</div>
+    <div id="pyqA${i}">
+      <button onclick="revPYQ(${i})" class="w-full py-2.5 rounded-xl text-sm font-semibold card hover:border-[#2563eb] hover:text-[#2563eb] transition-all" style="color:#434655">👁 ${ln==="hi"?"Jawab Dekho":"Show Answer"}</button>
+    </div>
+  </div>`).join("")}
+  </div>`;
+  
+  // ─ TEST ─
   let testH="";
-  if(testLoading) testH=`<div class="flex flex-col items-center py-12 gap-3"><div class="w-8 h-8 border-[3px] border-slate-200 border-t-slate-900 rounded-full spinner"></div><div class="text-sm font-bold">${ln==="hi"?"Test ban raha hai...":"Generating test..."}</div></div>`;
-  else if(testScore) testH=`<div class="text-center py-6 border-b border-slate-100 mb-4"><div class="text-5xl">${testScore.c/testScore.total>=0.6?"🏆":"📚"}</div><div class="text-3xl font-black mt-2">${testScore.c}/${testScore.total}</div><div class="text-sm text-slate-400">${Math.round((testScore.c/testScore.total)*100)}%</div></div>
-    ${testQs.map((m,i)=>`<div class="border rounded-xl p-3 mb-2 text-sm ${testAns[i]===m.ans?"border-green-200 bg-green-50":"border-red-200 bg-red-50"}">
-      <span class="text-xs text-slate-500">Q${i+1}. ${esc(m.q)}</span><br>
-      <span class="font-semibold ${testAns[i]===m.ans?"text-green-700":"text-red-600"}">${testAns[i]===m.ans?"✅":"❌"} ${esc(m[testAns[i]]||"")}</span>
-      ${testAns[i]!==m.ans?`<br><span class="text-green-700 text-xs">✓ ${esc(m[m.ans])}</span>`:""}
-      <br><span class="text-[11px] text-slate-400">💡 ${esc(m.exp)}</span>
-    </div>`).join("")}
-    <button onclick="set({testQs:[],testAns:{},testScore:null,testRunning:false})" class="w-full py-3 bg-slate-900 text-white rounded-xl font-bold text-sm mt-2">🔄 ${ln==="hi"?"Dobara":"Try Again"}</button>`;
-  else if(testRunning) testH=`<div class="flex justify-between items-center bg-slate-50 border border-slate-200 rounded-xl p-3 mb-4">
-      <div><div id="tvl" class="text-xl font-black">${fmtT(testTimer)}</div><div class="text-[10px] text-slate-400">${ln==="hi"?"Waqt bacha":"Time Left"}</div></div>
-      <div class="text-sm font-semibold text-slate-500">${Object.keys(testAns).length}/${testQs.length}</div>
+  if(testLoading) testH=`<div class="flex flex-col items-center py-16 gap-4"><div class="w-9 h-9 rounded-full spin" style="border:3px solid #e0e3e5;border-top-color:#0f172a"></div><div class="font-bold text-[#191c1e]">${ln==="hi"?"Test ban raha hai...":"Generating test..."}</div></div>`;
+  else if(testScore) testH=`<div class="text-center py-8">
+    <div class="text-6xl">${testScore.c/testScore.total>=0.6?"🏆":"📚"}</div>
+    <div class="text-4xl font-black mt-3 text-[#191c1e]">${testScore.c}/${testScore.total}</div>
+    <div class="text-[#737686] mt-1">${Math.round((testScore.c/testScore.total)*100)}% accuracy</div>
+  </div>
+  ${testQs.map((m,i)=>`<div class="card p-4 mb-3">
+    <div class="text-xs text-[#737686] mb-1">Q${i+1}. ${esc(m.q)}</div>
+    <div class="text-sm font-semibold ${testAns[i]===m.ans?"text-[#16a34a]":"text-[#dc2626]"}">${testAns[i]===m.ans?"✅":"❌"} ${esc(m[testAns[i]]||"")}</div>
+    ${testAns[i]!==m.ans?`<div class="text-sm text-[#16a34a] mt-1">✓ ${esc(m[m.ans])}</div>`:""}
+    <div class="text-xs text-[#737686] mt-2 p-2.5 rounded-lg" style="background:#f2f4f6">💡 ${esc(m.exp)}</div>
+  </div>`).join("")}
+  <button onclick="set({testQs:[],testAns:{},testScore:null,testRunning:false})" class="w-full py-3.5 rounded-xl font-bold text-sm mt-4 btn-dark">🔄 ${ln==="hi"?"Dobara":"Try Again"}</button>`;
+  else if(testRunning) testH=`<div class="flex justify-between items-center card p-4 mb-5">
+    <div><div id="tvl" class="text-2xl font-black text-[#191c1e]">${fmtT(testTimer)}</div><div class="text-xs text-[#737686] mt-0.5">${ln==="hi"?"Waqt bacha":"Time remaining"}</div></div>
+    <div class="text-sm font-bold text-[#737686]">${Object.keys(testAns).length}/${testQs.length} answered</div>
+  </div>
+  ${testQs.map((m,i)=>`<div class="card p-4 mb-4">
+    <div class="text-xs font-bold text-[#737686] mb-3">Question ${i+1}</div>
+    <div class="text-sm font-medium leading-relaxed text-[#191c1e] mb-4">${esc(m.q)}</div>
+    <div class="tg${i} flex flex-col gap-2">
+      ${["a","b","c","d"].map(o=>`<button class="w-full text-left px-3.5 py-3 rounded-xl text-sm flex items-center gap-2.5 border-2 transition-all font-medium ${testAns[i]===o?"bg-[#0f172a] text-white border-[#0f172a]":"bg-white text-[#434655] border-[#c3c6d7] hover:border-[#0f172a]"}" onclick="selTestOpt(${i},'${o}')">
+        <span class="text-xs font-black w-5">${o.toUpperCase()}.</span><span>${esc(m[o]||"")}</span>
+      </button>`).join("")}
     </div>
-    ${testQs.map((m,i)=>`<div class="bg-white border border-slate-200 rounded-xl p-4 mb-3 shadow-sm">
-      <div class="text-[10px] text-slate-400 font-semibold mb-1">Q ${i+1}</div>
-      <div class="text-sm font-medium leading-relaxed mb-3">${esc(m.q)}</div>
-      <div class="tg${i} flex flex-col gap-1.5">
-        ${["a","b","c","d"].map(o=>`<button class="w-full text-left px-3 py-2.5 rounded-xl text-sm flex items-center gap-2 border transition-all ${testAns[i]===o?"bg-slate-900 text-white border-slate-900":"bg-slate-50 text-slate-700 border-slate-200"}" onclick="selTestOpt(${i},'${o}')">
-          <span class="font-bold text-xs w-4">${o.toUpperCase()}.</span><span>${esc(m[o]||"")}</span>
-        </button>`).join("")}
-      </div>
-    </div>`).join("")}
-    <button onclick="submitTest()" class="w-full py-3.5 bg-blue-600 text-white rounded-xl font-bold text-sm">✓ ${ln==="hi"?"Test Submit":"Submit Test"}</button>`;
-  else testH=`<div class="mb-4"><label class="text-xs font-semibold text-slate-600 block mb-2">Chapter</label>
-    <select onchange="S.testCh=this.value" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none bg-white">${chs().map(c=>`<option value="${c}" ${testCh===c?"selected":""}>${c}</option>`).join("")}</select></div>
-    <div class="mb-5"><label class="text-xs font-semibold text-slate-600 block mb-2">Questions</label>
-    <div class="flex gap-2">${[10,20,30].map(n=>`<button onclick="S.testCnt=${n}" class="px-4 py-2 rounded-full text-xs font-semibold border ${testCnt===n?"bg-slate-900 text-white border-slate-900":"bg-slate-50 text-slate-600 border-slate-200"}">${n}</button>`).join("")}</div></div>
-    <button onclick="startTest()" class="w-full py-3.5 bg-slate-900 text-white rounded-xl font-bold text-sm">⏱ ${ln==="hi"?"Test Shuru Karein":"Start Test"}</button>`;
+  </div>`).join("")}
+  <button onclick="submitTest()" class="w-full py-4 rounded-xl font-bold text-sm text-white btn-primary mt-2">✓ ${ln==="hi"?"Test Submit Karein":"Submit Test"}</button>`;
+  else testH=`<div class="mb-5"><label class="text-xs font-bold text-[#737686] uppercase tracking-wider block mb-2">Chapter</label>
+  <select onchange="S.testCh=this.value" class="inp w-full px-3.5 py-3 text-sm" style="color:#191c1e">${chs().map(c=>`<option value="${c}" ${testCh===c?"selected":""}>${c}</option>`).join("")}</select></div>
+  <div class="mb-6"><label class="text-xs font-bold text-[#737686] uppercase tracking-wider block mb-2">Questions</label>
+  <div class="flex gap-2">${[10,20,30].map(n=>`<button onclick="S.testCnt=${n}" class="pill px-4 py-2 text-xs ${testCnt===n?"on":""}">${n}</button>`).join("")}</div></div>
+  <button onclick="startTest()" class="w-full py-4 rounded-xl font-bold text-sm text-white btn-dark">⏱ ${ln==="hi"?"Test Shuru Karein":"Start Test"}</button>`;
 
-  return`<div class="flex flex-col flex-1 overflow-hidden">
-    <div class="flex border-b border-slate-100 bg-white flex-shrink-0">
-      ${[["mcq","📝 MCQ"],["pyq","📜 PYQ"],["test","🧪 Test"]].map(([t,lb])=>`<div data-t="${t}" class="ptab flex-1 py-2.5 text-xs font-semibold text-center cursor-pointer border-b-2 ${pt===t?"border-slate-900 text-slate-900":"border-transparent text-slate-400"}" onclick="setPTab('${t}')">${lb}</div>`).join("")}
+  return`<div class="flex flex-col flex-1 overflow-hidden" style="background:#f7f9fb">
+    <div class="flex border-b bg-white flex-shrink-0" style="border-color:#e0e3e5">
+      ${[["mcq","📝 MCQ"],["pyq","📜 PYQ"],["test","🧪 Test"]].map(([id,lb])=>`
+      <div onclick="S.ptab='${id}';this.parentElement.querySelectorAll('div').forEach(d=>d.className='flex-1 py-3 text-xs font-bold text-center cursor-pointer border-b-2 transition-all '+(d.dataset.t==='${id}'?'border-[#0f172a] text-[#191c1e]':'border-transparent text-[#737686]'));['mcq','pyq','test'].forEach(x=>{const el=document.getElementById('pp'+x);if(el)el.style.display=x==='${id}'?'block':'none';})" data-t="${id}" class="flex-1 py-3 text-xs font-bold text-center cursor-pointer border-b-2 transition-all ${pt===id?"border-[#0f172a] text-[#191c1e]":"border-transparent text-[#737686]"}">${lb}</div>`).join("")}
     </div>
     <div class="flex-1 overflow-y-auto p-4">
-      <div id="ptmcq" style="display:${pt==="mcq"?"block":"none"}">${mcqH}</div>
-      <div id="ptpyq" style="display:${pt==="pyq"?"block":"none"}">${pyqH}</div>
-      <div id="pttest" style="display:${pt==="test"?"block":"none"}">${testH}</div>
+      <div id="ppmcq" style="display:${pt==="mcq"?"block":"none"}">${mcqH}</div>
+      <div id="pppyq" style="display:${pt==="pyq"?"block":"none"}">${pyqH}</div>
+      <div id="pptest" style="display:${pt==="test"?"block":"none"}">${testH}</div>
     </div>
   </div>`;
 }
 
-function setPTab(t){
-  S.practiceTab=t;
-  ["mcq","pyq","test"].forEach(x=>{ const el=document.getElementById(`pt${x}`); if(el) el.style.display=x===t?"block":"none"; });
-  document.querySelectorAll(".ptab").forEach(b=>{ b.className=`ptab flex-1 py-2.5 text-xs font-semibold text-center cursor-pointer border-b-2 ${b.dataset.t===t?"border-slate-900 text-slate-900":"border-transparent text-slate-400"}`; });
-}
-
-function renderAnalysis(){
-  const ln=l();
-  if(!isPrem()) return`<div class="flex-1 flex flex-col items-center justify-center p-6 text-center">
-    <div class="text-5xl mb-3">📊</div>
-    <div class="font-bold text-lg mb-2">${ln==="hi"?"Analysis Premium mein hai":"Analysis is Premium"}</div>
-    <div class="text-slate-400 text-sm mb-6">${ln==="hi"?"MCQ aur Test solve karne ke baad analysis dekhein":"View your performance analysis"}</div>
-    ${[49,99,149].map(a=>`<button onclick="openPayment(${a})" class="w-full max-w-xs flex items-center justify-between px-4 py-3.5 rounded-xl border-2 mb-3 ${a===99?"border-blue-600 bg-blue-50":"border-slate-200"} mx-auto">
-      <div class="font-bold text-sm">₹${a}/month</div><div class="text-xs text-slate-400">${PLANS[a].name}</div>
+function rAnalysis(){
+  const ln=L();
+  if(!isPrem()) return`<div class="flex-1 flex flex-col items-center justify-center p-6 text-center" style="background:#f7f9fb">
+    <div class="text-6xl mb-4">📊</div>
+    <div class="text-xl font-bold text-[#191c1e] mb-2">${ln==="hi"?"Analysis Premium mein hai":"Analysis is Premium"}</div>
+    <div class="text-sm text-[#737686] mb-8 leading-relaxed">${ln==="hi"?"MCQ aur Test solve karne ke baad analysis dekhein":"Solve MCQs and Tests to see your performance analysis"}</div>
+    ${[49,99,149].map(a=>`<button onclick="pay(${a})" class="flex items-center justify-between w-full max-w-xs card px-4 py-4 mb-3 mx-auto hover:border-[#2563eb] transition-all ${a===99?"border-[#2563eb] bg-[#eff6ff]":""}">
+      <div class="text-left"><div class="font-bold text-[#191c1e]">₹${a}/month</div><div class="text-xs text-[#737686] mt-0.5">${PLANS[a].n}</div></div>
+      <div class="text-[#2563eb] font-bold">→</div>
     </button>`).join("")}
   </div>`;
   const {weakMap,strongMap,totalAsked,totalMCQ,totalCorrect}=S;
   const acc=totalMCQ?Math.round((totalCorrect/totalMCQ)*100)+"%":"—";
   const has=Object.keys(weakMap).length||Object.keys(strongMap).length;
-  return`<div class="flex-1 overflow-y-auto p-4">
-    <div class="grid grid-cols-2 gap-3 mb-5">
-      ${[[ln==="hi"?"Sawaal":"Asked",totalAsked,"⚡"],[ln==="hi"?"MCQ":"MCQ",totalMCQ,"📝"],[ln==="hi"?"Sahi":"Correct",totalCorrect,"✅"],["Accuracy",acc,"🎯"]].map(([lb,v,ic])=>`<div class="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-center"><div class="text-xl">${ic}</div><div class="text-xl font-black mt-1">${v}</div><div class="text-[10px] text-slate-400 mt-0.5">${lb}</div></div>`).join("")}
+  return`<div class="flex-1 overflow-y-auto p-4" style="background:#f7f9fb">
+    <div class="grid grid-cols-2 gap-3 mb-6">
+      ${[[ln==="hi"?"Sawaal":"Asked",totalAsked,"⚡","#dbe1ff"],[ln==="hi"?"MCQ":"MCQ Done",totalMCQ,"📝","#dae2fd"],[ln==="hi"?"Sahi":"Correct",totalCorrect,"✅","#dcfce7"],["Accuracy",acc,"🎯","#fef3c7"]].map(([lb,v,ic,bg])=>`
+      <div class="card p-4 text-center" style="background:${bg}">
+        <div class="text-2xl">${ic}</div><div class="text-2xl font-black mt-1 text-[#191c1e]">${v}</div><div class="text-[10px] text-[#737686] mt-0.5 font-semibold uppercase tracking-wide">${lb}</div>
+      </div>`).join("")}
     </div>
-    ${!has?`<div class="text-center py-10 text-slate-400 text-sm">${ln==="hi"?"MCQ solve karo — yahan analysis aayegi!":"Solve MCQs — analysis will appear here!"}</div>`:
-    (Object.keys(weakMap).length?`<div class="text-xs font-bold text-red-500 mb-2">📉 ${ln==="hi"?"Kamzor Topics":"Weak Areas"}</div>${Object.entries(weakMap).sort((a,b)=>b[1]-a[1]).map(([c,n])=>`<div class="flex justify-between items-center bg-red-50 border border-red-100 rounded-xl p-3 mb-2 text-sm"><span>${c}</span><span class="text-xs font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded">${n}×</span></div>`).join("")}`:"")
-    +(Object.keys(strongMap).length?`<div class="text-xs font-bold text-green-600 mb-2 mt-4">📈 ${ln==="hi"?"Mazboot Topics":"Strong Areas"}</div>${Object.entries(strongMap).sort((a,b)=>b[1]-a[1]).map(([c,n])=>`<div class="flex justify-between items-center bg-green-50 border border-green-100 rounded-xl p-3 mb-2 text-sm"><span>${c}</span><span class="text-xs font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded">${n}×</span></div>`).join("")}`:"")
+    ${!has?`<div class="text-center py-12"><div class="text-5xl mb-3">📊</div><div class="text-[#737686] text-sm">${ln==="hi"?"MCQ solve karo — yahan analysis aayegi!":"Solve MCQs — analysis will appear here!"}</div></div>`:
+    (Object.keys(weakMap).length?`<div class="text-xs font-bold uppercase tracking-wider mb-3" style="color:#dc2626">📉 ${ln==="hi"?"Kamzor Topics":"Weak Areas"}</div>
+    ${Object.entries(weakMap).sort((a,b)=>b[1]-a[1]).map(([c,n])=>`<div class="card flex justify-between items-center p-3.5 mb-2" style="background:#fef2f2;border-color:#fecaca"><span class="text-sm text-[#191c1e]">${c}</span><span class="text-xs font-bold px-2.5 py-1 rounded-full" style="background:#fee2e2;color:#dc2626">${n}×</span></div>`).join("")}`:"")
+    +(Object.keys(strongMap).length?`<div class="text-xs font-bold uppercase tracking-wider mb-3 mt-5" style="color:#16a34a">📈 ${ln==="hi"?"Mazboot Topics":"Strong Areas"}</div>
+    ${Object.entries(strongMap).sort((a,b)=>b[1]-a[1]).map(([c,n])=>`<div class="card flex justify-between items-center p-3.5 mb-2" style="background:#f0fdf4;border-color:#bbf7d0"><span class="text-sm text-[#191c1e]">${c}</span><span class="text-xs font-bold px-2.5 py-1 rounded-full" style="background:#dcfce7;color:#16a34a">${n}×</span></div>`).join("")}`:"")
     }
   </div>`;
 }
 
-function renderPredictor(){
-  const ln=l();
-  return`<div class="flex-1 overflow-y-auto p-4">
-    <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-5">
-      <div class="font-bold text-blue-700 text-sm mb-1">🔮 AI Exam Predictor</div>
-      <div class="text-blue-600 text-xs leading-relaxed">${ln==="hi"?"Pichle 10 saalon ka pattern analyze karke predict karega":"Analyzes 10 years of patterns to predict important topics"}</div>
+function rPredictor(){
+  const ln=L();
+  return`<div class="flex-1 overflow-y-auto p-4" style="background:#f7f9fb">
+    <div class="card p-4 mb-5" style="background:#dbe1ff;border-color:#b4c5ff">
+      <div class="font-bold text-sm mb-1" style="color:#003ea8">🔮 AI Exam Predictor</div>
+      <div class="text-xs leading-relaxed" style="color:#003ea8">${ln==="hi"?"Pichle 10 saalon ka pattern analyze karke predict karega":"Analyzes 10 years of exam patterns to predict important topics"}</div>
     </div>
-    <div class="mb-5"><label class="text-xs font-semibold text-slate-600 block mb-2">Chapter</label>
-    <select id="predSel" class="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none bg-white">${chs().map(c=>`<option value="${c}">${c}</option>`).join("")}</select></div>
-    ${S.predErr?`<div class="bg-red-50 border border-red-200 rounded-xl p-3 mb-3 text-red-600 text-sm">${S.predErr}</div>`:""}
+    <div class="mb-5"><label class="text-xs font-bold text-[#737686] uppercase tracking-wider block mb-2">Chapter</label>
+    <select id="predSel" class="inp w-full px-3.5 py-3 text-sm" style="color:#191c1e">${chs().map(c=>`<option value="${c}">${c}</option>`).join("")}</select></div>
+    ${S.predErr?`<div class="p-3.5 rounded-xl text-sm mb-4 font-medium" style="background:#fef2f2;color:#dc2626;border:1.5px solid #fecaca">${S.predErr}</div>`:""}
     ${S.predLoading
-      ?`<div class="flex items-center justify-center py-8 gap-3"><div class="w-7 h-7 border-[3px] border-slate-200 border-t-slate-900 rounded-full spinner"></div><span class="text-sm">${ln==="hi"?"Predict ho raha hai...":"Predicting..."}</span></div>`
-      :`<button onclick="runPredictor()" class="w-full py-3.5 bg-slate-900 text-white rounded-xl font-bold text-sm">🔮 ${ln==="hi"?"Predict Karein":"Run Predictor"}</button>`}
-    ${S.prediction?`<div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 mt-4 text-sm leading-relaxed text-slate-900 whitespace-pre-wrap">${esc(S.prediction)}</div>`:""}
+      ?`<div class="flex items-center justify-center py-10 gap-3"><div class="w-7 h-7 rounded-full spin" style="border:2.5px solid #e0e3e5;border-top-color:#0f172a"></div><span class="text-sm text-[#737686]">${ln==="hi"?"Predict ho raha hai...":"Predicting..."}</span></div>`
+      :`<button onclick="runPredictor()" class="w-full py-4 rounded-xl font-bold text-sm text-white btn-primary">🔮 ${ln==="hi"?"Predict Karein":"Run Predictor"}</button>`}
+    ${S.prediction?`<div class="card p-5 mt-5 text-sm leading-8 text-[#191c1e]" style="white-space:pre-wrap">${esc(S.prediction).replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}</div>`:""}
   </div>`;
 }
 
-function renderSettings(){
-  const ln=l();
-  return`<div class="flex-1 overflow-y-auto p-4">
-    <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Account</div>
-    <div class="bg-white border border-slate-100 rounded-2xl overflow-hidden mb-5">
-      <div class="flex justify-between items-center px-4 py-3.5 border-b border-slate-50"><span class="text-sm">👤 User</span><span class="text-xs text-slate-400">${S.user?.email||"Guest"}</span></div>
-      <div class="flex justify-between items-center px-4 py-3.5 border-b border-slate-50"><span class="text-sm">⭐ Plan</span><span class="text-xs font-semibold ${isPrem()?"text-blue-600":"text-slate-400"}">${isPrem()?`${S.profile?.plan||"pro"} PRO`:"Free"}</span></div>
-      ${!isPrem()?`<button onclick="set({showPrem:true})" class="flex justify-between items-center px-4 py-3.5 w-full text-left border-b border-slate-50"><span class="text-sm">🚀 Upgrade</span><span class="text-xs text-blue-600">₹49/₹99/₹149 →</span></button>`:""}
-      ${!S.user?`<button onclick="googleLogin()" class="flex justify-between items-center px-4 py-3.5 w-full text-left"><span class="text-sm">🔑 Login</span><span class="text-xs text-blue-600">Google →</span></button>`:""}
+function rSettings(){
+  const ln=L();
+  return`<div class="flex-1 overflow-y-auto p-4" style="background:#f7f9fb">
+    <div class="text-xs font-bold text-[#737686] uppercase tracking-wider mb-3">Account</div>
+    <div class="card overflow-hidden mb-5 bg-white">
+      <div class="flex justify-between items-center px-4 py-4 border-b" style="border-color:#e0e3e5"><span class="text-sm font-medium text-[#191c1e]">👤 User</span><span class="text-xs text-[#737686]">${S.user?.email||"Guest"}</span></div>
+      <div class="flex justify-between items-center px-4 py-4 border-b" style="border-color:#e0e3e5"><span class="text-sm font-medium text-[#191c1e]">⭐ Plan</span><span class="text-xs font-bold ${isPrem()?"text-[#2563eb]":"text-[#737686]"}">${isPrem()?`${S.profile?.plan||"pro"} — PRO`:"Free"}</span></div>
+      ${!isPrem()?`<button onclick="set({showPrem:true})" class="flex justify-between items-center px-4 py-4 w-full text-left border-b" style="border-color:#e0e3e5"><span class="text-sm font-medium text-[#191c1e]">🚀 Upgrade</span><span class="text-xs font-bold text-[#2563eb]">₹49/₹99/₹149 →</span></button>`:""}
+      ${!S.user?`<button onclick="gLogin()" class="flex justify-between items-center px-4 py-4 w-full text-left"><span class="text-sm font-medium text-[#191c1e]">🔑 Login</span><span class="text-xs font-bold text-[#2563eb]">Google →</span></button>`:""}
     </div>
-    <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Study</div>
-    <div class="bg-white border border-slate-100 rounded-2xl overflow-hidden mb-5">
-      <div class="flex justify-between items-center px-4 py-3.5 border-b border-slate-50"><span class="text-sm">🏫 Board</span><span class="text-xs text-slate-400">${S.board==="bihar"?"Bihar Board":"CBSE"}</span></div>
-      <div class="flex justify-between items-center px-4 py-3.5 border-b border-slate-50"><span class="text-sm">📚 Class</span><span class="text-xs text-slate-400">Class ${S.cls}</span></div>
-      <div class="flex justify-between items-center px-4 py-3.5 border-b border-slate-50"><span class="text-sm">🌐 Medium</span><span class="text-xs text-slate-400">${S.medium==="hi"?"Hindi":"English"}</span></div>
-      <button onclick="set({screen:'boardSelect'})" class="flex justify-between items-center px-4 py-3.5 w-full text-left"><span class="text-sm">🔄 ${ln==="hi"?"Board/Class Badlo":"Change Board/Class"}</span><span class="text-xs text-blue-600">→</span></button>
+    <div class="text-xs font-bold text-[#737686] uppercase tracking-wider mb-3">Study</div>
+    <div class="card overflow-hidden mb-5 bg-white">
+      <div class="flex justify-between items-center px-4 py-4 border-b" style="border-color:#e0e3e5"><span class="text-sm font-medium text-[#191c1e]">🏫 Board</span><span class="text-xs text-[#737686]">${S.board==="bihar"?"Bihar Board":"CBSE"}</span></div>
+      <div class="flex justify-between items-center px-4 py-4 border-b" style="border-color:#e0e3e5"><span class="text-sm font-medium text-[#191c1e]">📚 Class</span><span class="text-xs text-[#737686]">Class ${S.cls}</span></div>
+      <div class="flex justify-between items-center px-4 py-4 border-b" style="border-color:#e0e3e5"><span class="text-sm font-medium text-[#191c1e]">🌐 Medium</span><span class="text-xs text-[#737686]">${S.medium==="hi"?"Hindi":"English"}</span></div>
+      <button onclick="set({sc:'boardSelect'})" class="flex justify-between items-center px-4 py-4 w-full text-left"><span class="text-sm font-medium text-[#191c1e]">🔄 ${ln==="hi"?"Change Board/Class":"Change Board/Class"}</span><span class="text-xs font-bold text-[#2563eb]">→</span></button>
     </div>
-    <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Usage Today</div>
-    <div class="bg-white border border-slate-100 rounded-2xl overflow-hidden">
-      ${[["💬 Chat","chat"],["📝 MCQ","mcq"],["📜 PYQ","pyq"],["🧪 Test","test"],["🔮 Predictor","predict"]].map(([lb,f])=>`<div class="flex justify-between items-center px-4 py-3.5 border-b border-slate-50 last:border-0">
-        <span class="text-sm">${lb}</span>
-        <span class="text-xs font-semibold ${usage(f)>=FREE[f]&&!isPrem()?"text-red-500":"text-slate-400"}">${usage(f)}/${FREE[f]}</span>
+    <div class="text-xs font-bold text-[#737686] uppercase tracking-wider mb-3">Usage Today</div>
+    <div class="card overflow-hidden bg-white">
+      ${[["💬 Chat","chat"],["📝 MCQ","mcq"],["📜 PYQ","pyq"],["🧪 Test","test"],["🔮 Predictor","predict"]].map(([lb,f],i,arr)=>`
+      <div class="flex justify-between items-center px-4 py-4 ${i<arr.length-1?"border-b":"}" style="${i<arr.length-1?"border-color:#e0e3e5":""}">
+        <span class="text-sm font-medium text-[#191c1e]">${lb}</span>
+        <div class="flex items-center gap-2">
+          <div class="w-16 h-1.5 rounded-full" style="background:#e0e3e5"><div class="h-full rounded-full" style="background:${used(f)>=FREE[f]&&!isPrem()?"#dc2626":"#2563eb"};width:${Math.min(100,(used(f)/FREE[f])*100)}%"></div></div>
+          <span class="text-xs font-bold ${used(f)>=FREE[f]&&!isPrem()?"text-[#dc2626]":"text-[#737686]"}">${used(f)}/${FREE[f]}</span>
+        </div>
       </div>`).join("")}
     </div>
   </div>`;
 }
 
-// ── INIT ──
-initAuth().then(()=>render());
+init().then(()=>render());
 </script>
 </body>
 </html>
+  
+  
